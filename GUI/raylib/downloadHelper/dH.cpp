@@ -4,6 +4,7 @@
  * Table with Thread state (If thread finished, then get return, if not 0, ERR)
  * buffer
  * Path
+ * more FPS
  */
 
 #include <cmath>
@@ -65,6 +66,8 @@ int main() {
   std::vector<char> link = {};
   char key;
   Mode state = ENTER;
+  int textPosition = 0;
+  int textWidth = 65;
 
   short threadCount = 2;
   float sliderValue = threadCount;
@@ -127,6 +130,10 @@ int main() {
           currentThread = 0;
         }
         // free(toDownloadLink);
+      } else if (IsKeyPressed(KEY_RIGHT)) {
+        textPosition++;
+      } else if (IsKeyPressed(KEY_LEFT) && textPosition > 0) {
+        textPosition--;
       }
     }
 
@@ -167,9 +174,18 @@ int main() {
     if (state) {
       DrawRectangleRoundedLinesEx(inputField, 0.9, 50, 3, (Color){90, 90, 140, 255});
     }
-    char linkTxt[link.size()];
+    // Buffering Text
     if (link.size() > 0) {
-      DrawText(vector_to_str(link, link.size(), linkTxt), 60, 242, 20, BLACK);
+      char linkTxt[link.size()];
+      vector_to_str(link, link.size(), linkTxt);
+      char displayText[textWidth + 1] = {0};
+      for (int i = 0; i < textWidth; i++) {
+        if (i + textPosition == link.size()) {
+          break;
+        }
+        displayText[i] = link.at(textPosition + i);
+      }
+      DrawText(displayText, 60, 242, 20, BLACK);
     } else {
       DrawText("paste(EINFG) or type link", 60, 242, 20, GRAY);
     }
