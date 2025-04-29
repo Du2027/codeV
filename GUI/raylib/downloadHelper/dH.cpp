@@ -1,9 +1,7 @@
 /*
  * TODO
- * scalability
  * Table with Thread state (If thread finished, then get return, if not 0, ERR)
- * buffer
- * Path
+ * Path ??
  * more FPS
  */
 
@@ -52,12 +50,19 @@ int download(char *link, int linkSize, DownloadSite site) {
 }
 
 int main() {
-  InitWindow(800, 500, "Download helper");
+  InitWindow(0, 0, "TMPWINDOW");
+  int monitorSizes[] = {GetMonitorWidth(0), GetMonitorHeight(0)};
+  CloseWindow();
+
+  InitWindow(monitorSizes[0] / 3, monitorSizes[1] / 2.8, "Download helper");
   SetTargetFPS(FPS);
 
-  Rectangle inputField = {50, 225, 700, 50};
-  Rectangle quitButton = {760, 0, 40, 40};
-  Rectangle slider = {75, 325, 650, 30};
+  float monitorDeltaScaleX = GetMonitorWidth(0) / 2560.0f;
+  float monitorDeltaScaleY = GetMonitorHeight(0) / 1440.0f;
+
+  Rectangle inputField = {50 * monitorDeltaScaleX, 225 * monitorDeltaScaleY, 700 * monitorDeltaScaleX, 50 * monitorDeltaScaleY};
+  Rectangle quitButton = {810 * monitorDeltaScaleX, 0, 40 * monitorDeltaScaleX, 40 * monitorDeltaScaleY};
+  Rectangle slider = {75 * monitorDeltaScaleX, 325 * monitorDeltaScaleY, 650 * monitorDeltaScaleX, 30 * monitorDeltaScaleY};
   Color inputColor = {163, 163, 194, 255};
   Color quitColor;
 
@@ -98,7 +103,7 @@ int main() {
       } else if (IsKeyDown(KEY_BACKSPACE) && link.size() > 0) {
         link.pop_back();
       } else if (IsKeyPressed(KEY_INSERT)) {
-        char clipTxt[1000] = {0}; // REALLY unsafe, but no other opiton
+        char clipTxt[2000] = {0}; // REALLY unsafe, but no other opiton
         strcpy(clipTxt, GetClipboardText());
         for (int i = 0; i < 1000; i++) {
           if (clipTxt[i] != 0) {
@@ -163,18 +168,19 @@ int main() {
     BeginDrawing();
     ClearBackground((Color){193, 193, 215, 255});
 
-    DrawText("Thread count", 655, 359, 10, (Color){55, 17, 31, 200});
-    DrawText("DownloadHelper", 50, 80, 60, (Color){55, 17, 31, 200});
+    DrawText("Thread count", 655 * monitorDeltaScaleX, 359 * monitorDeltaScaleY, 10, (Color){55, 17, 31, 200});
+    DrawText("DownloadHelper", 50 * monitorDeltaScaleX, 80 * monitorDeltaScaleY, 60, (Color){55, 17, 31, 200});
 
     DrawRectangleRounded(inputField, 0.9, 20, inputColor);
 
     DrawRectangleRounded(quitButton, 0.25, 20, quitColor);
-    DrawText("X", 771, 6, 30, DARKGRAY);
+    DrawText("X", 821 * monitorDeltaScaleX, 6 * monitorDeltaScaleY, 30, DARKGRAY);
 
     if (state) {
       DrawRectangleRoundedLinesEx(inputField, 0.9, 50, 3, (Color){90, 90, 140, 255});
     }
-    // Buffering Text
+
+    // Buffering Text so the whole thing isnt written
     if (link.size() > 0) {
       char linkTxt[link.size()];
       vector_to_str(link, link.size(), linkTxt);
@@ -185,9 +191,9 @@ int main() {
         }
         displayText[i] = link.at(textPosition + i);
       }
-      DrawText(displayText, 60, 242, 20, BLACK);
+      DrawText(displayText, 60 * monitorDeltaScaleX, 242 * monitorDeltaScaleY, 20, BLACK);
     } else {
-      DrawText("paste(EINFG) or type link", 60, 242, 20, GRAY);
+      DrawText("paste(EINFG) or type link", 60 * monitorDeltaScaleX, 242 * monitorDeltaScaleY, 20, GRAY);
     }
     EndDrawing();
   }
