@@ -1,158 +1,151 @@
-// g++ editor.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-
-// TODO
-//    ZOOM
-//    Verzweigungen
-//    Loop Fuss & Kopf
-
 #include <raylib.h>
 #include <stdio.h>
 #include <vector>
 
-#define DEBUG 0
-#define MENUSPACE 10
-#define FPS 60
+#define DEBUG 1
+#define FPS 120
 
-class Seqfield {
-public:
-  Rectangle rec;
-  std::vector<char> text;
-
-  Seqfield(Rectangle rec) { this->rec = rec; }
-
-  void UpdatePos(Vector2 Mousepos) {
-    this->rec.x = Mousepos.x;
-    this->rec.y = Mousepos.y;
-  }
-
-  void UpdateText(char Char) { text.push_back(Char); }
-
-  void Draw() {
-    // char Vector to char[]
-    char TexttoDraw[text.size() + 1];
-    for (int i = 0; i < text.size(); i++) {
-      TexttoDraw[i] = text.at(i);
-    }
-
-    TexttoDraw[text.size()] = 0;
-
-    if (MeasureText(TexttoDraw, 20) + 8 * 2 > rec.width) {
-      rec.width = MeasureText(TexttoDraw, 20) + 8 * 2;
-    }
-
-    DrawRectangle(rec.x, rec.y, rec.width, rec.height,
-                  (Color){170, 170, 170, 255});
-    DrawText(TexttoDraw, rec.x + 8, rec.y + 8, 20, BLACK);
-  }
-};
-
-enum HoverState { AWAY = 0, HOVERING = 1 };
-
-enum Mousehold {
+enum statementType {
   NONE = 0,
   SEQ = 1,
+  VER = 2,
+  SCH = 3
 };
+
+class Field {
+public:
+  statementType type;
+  Rectangle rec;
+
+  Field(Rectangle rec, statementType type) {
+    this->rec = rec;
+    this->type = type;
+  }
+
+  void updatePos(Vector2 pos) {
+    this->rec.x = pos.x;
+    this->rec.y = pos.y;
+  }
+
+  void draw() {
+    DrawRectangleRec(rec, (Color){135, 135, 135, 200});
+  }
+  Field() {}
+};
+
+class ManagerBlock {
+public:
+  Vector2 pos;
+  std::vector<Field> fields;
+
+  ManagerBlock(Vector2 pos) {
+    this->pos = pos;
+    this->fields = std::vector<Field>();
+  }
+
+  void appendField(Field field) {
+    fields.push_back(field); // Need to implement!
+  }
+
+  void drawAllFields() {
+    for (int i = 0; i < fields.size(); i++) {
+      fields.at(i).draw();
+    }
+  }
+
+  float getWidth() {
+    float biggestWidth = 0;
+    for (int i = 0; i < fields.size(); i++) {
+      if (fields.at(i).rec.width > biggestWidth) {
+        biggestWidth = fields.at(i).rec.width;
+      }
+    }
+    return biggestWidth;
+  }
+
+  float getHeight() {
+    float height = 0;
+    for (int i = 0; i < fields.size(); i++) {
+      height = height + fields.at(i).rec.height;
+    }
+    return height;
+  }
+};
+
+bool doesMFCollide(Rectangle managerRec, Rectangle fieldRec) {
+  return CheckCollisionRecs(managerRec, fieldRec);
+}
 
 int main() {
   InitWindow(0, 0, "tmp_win");
-  Vector2 Winsize = {GetMonitorWidth(0) / 2.0f, GetMonitorHeight(0) / 2.0f};
+  Vector2 winSize = {GetMonitorWidth(0) / 2.0f, GetMonitorHeight(0) / 2.0f};
   CloseWindow();
 
-  InitWindow(Winsize.x, Winsize.y, "Struktogramme");
+  InitWindow(winSize.x, winSize.y, "Struktogramme");
   SetTargetFPS(FPS);
 
-  Rectangle Menurec;
-  Vector2 MousePos;
-  Color SeqButtonColor = (Color){180, 180, 180, 255};
-  HoverState SeqButtonHover = AWAY;
-  Mousehold Holding = NONE;
-  Seqfield Possable_Seqfield((Rectangle){0, 0, 0, 0});
-  bool entermode = false;
-  int SeqIndexenter;
-  char key;
+  Rectangle menuRec;
+  Rectangle seqRec;
+  Color seqButtonColor = (Color){180, 180, 180, 255};
+  Color menuColor = (Color){150, 150, 150, 255};
 
-  std::vector<Seqfield> placedSeqs;
+  int menuPadding = 10;
+  Vector2 mousePos;
+  statementType holding = NONE;
+  Field mouseField;
+  std::vector<ManagerBlock> managers = {};
 
   while (!WindowShouldClose()) {
-    Winsize = {
-        (float)GetRenderWidth(),
-        (float)
-            GetRenderHeight()}; // Winsize is 30px different after ~33msek ???
-    Menurec = {MENUSPACE, MENUSPACE, Winsize.x / 4, Winsize.y - MENUSPACE * 2};
-    MousePos = GetMousePosition();
+    winSize = (Vector2){(float)GetRenderWidth(), (float)GetRenderHeight()}; // Winsize is 30px different after ~33msek ???
+    menuRec = (Rectangle){(float)menuPadding, (float)menuPadding, winSize.x / 4, winSize.y - menuPadding * 2};
+    seqRec = (Rectangle){(menuRec.x + menuRec.width + menuPadding) / 4, (float)menuPadding * 3 + 40, menuRec.width / 2, 35};
 
-    if (DEBUG) {
-      printf("WINSIZE:%f\t%d\n", Winsize.x, GetRenderHeight());
-      printf("MOUSEPOS:%f\t%f\n", MousePos.x, MousePos.y);
-      printf("HOLD:%d\n", Holding);
-      if (entermode) {
-        printf("ENTERMODE\n");
-      }
+    if (IsMouseButtonPressed(0)) {
+      mousePos = GetMousePosition();
 
-      printf("__\n");
-    }
+      // Click on seqRec
+      if (CheckCollisionRecs(seqRec, (Rectangle){mousePos.x, mousePos.y, 1, 1})) {
+        mouseField = Field((Rectangle){mousePos.x, mousePos.y, winSize.x / 8, winSize.y / 20}, SEQ);
+        holding = SEQ;
+      } else if (mousePos.x > menuRec.width + menuRec.x && holding != NONE) {
+        bool doesCollide = false;
+        short collidingManager = 0;
+        // Does Field collides with a ManagerBlock
+        for (int i = 0; i < managers.size(); i++) {
+          if (doesMFCollide((Rectangle){managers.at(i).pos.x, managers.at(i).pos.y, managers.at(i).getWidth(), managers.at(i).getHeight()}, mouseField.rec)) {
+            doesCollide = true;
+            collidingManager = i;
+          }
+        }
+        if (managers.size() < 1 || !doesCollide) {
+          ManagerBlock tmpManager = ManagerBlock(mousePos);
+          tmpManager.appendField(mouseField);
+          managers.push_back(tmpManager);
+        } else if (doesCollide) {
+          mouseField.rec.x = managers.at(collidingManager).pos.x;
+          mouseField.rec.y = managers.at(collidingManager).pos.y + managers.at(collidingManager).getHeight();
+          managers.at(collidingManager).appendField(mouseField);
+          holding = NONE;
+        }
+        holding = NONE;
+      } else if (holding == NONE) {
+        bool found = false;
 
-    // Seqbutton
-    if (CheckCollisionRecs((Rectangle){(Menurec.x + Menurec.width) / 4,
-                                       MENUSPACE * 3 + 40, Menurec.width / 2,
-                                       35},
-                           (Rectangle){MousePos.x, MousePos.y, 1, 1})) {
-      SeqButtonHover = HOVERING;
-      if (IsMouseButtonPressed(0) && !entermode) {
-        Possable_Seqfield.rec = (Rectangle){0, 0, Winsize.x / 8, 35};
-        Holding = SEQ;
-      }
-    } else {
-      SeqButtonHover = AWAY;
-    }
-
-    if (IsMouseButtonReleased(0)) {
-      if (Holding != NONE) {
-        placedSeqs.push_back(Possable_Seqfield);
-      }
-      Holding = NONE;
-    } else if (IsMouseButtonPressed(0)) {
-      entermode = false;
-
-      // Check wich Seq is beeing clicked
-      if (placedSeqs.size() > 0) {
-        short SeqIndex = -1;
-        std::vector<char> Text;
-        // Find corresponding Seqfield
-        for (int i = placedSeqs.size(); i >= 0; i--) {
-          if (CheckCollisionRecs(placedSeqs[i].rec,
-                                 (Rectangle){MousePos.x, MousePos.y, 1, 1})) {
-            SeqIndex = i;
+        for (int i = 0; i < managers.size(); i++) {
+          for (int n = 0; n < managers.at(i).fields.size(); n++) {
+            if (CheckCollisionRecs((Rectangle){mousePos.x, mousePos.y, 1, 1}, managers.at(i).fields.at(n).rec)) {
+              mouseField = managers.at(i).fields.at(n);
+              holding = SEQ;
+              managers.at(i).fields.erase(managers.at(i).fields.begin() + n); // need to move other elements to front
+            }
+            if (found) {
+              break;
+            }
+          }
+          if (found) {
             break;
           }
         }
-        if (SeqIndex > -1) {
-          entermode = true;
-          SeqIndexenter = SeqIndex;
-        }
-      }
-    }
-
-    // Seq handling
-    key = GetCharPressed();
-    if (IsKeyPressed(KEY_ENTER)) {
-      entermode = false;
-    } else if (IsKeyPressed(KEY_BACKSPACE)) {
-      placedSeqs[SeqIndexenter].text.pop_back();
-    } else if (entermode && key > 31 && key < 127) {
-      placedSeqs[SeqIndexenter].UpdateText(key);
-    } else if (IsKeyPressed(KEY_DELETE)) {
-      placedSeqs.erase(
-          placedSeqs.begin() +
-          SeqIndexenter); // Doesnt work properly bc possable_seqfield
-      entermode = false;
-    }
-
-    if (Holding != NONE && !entermode) {
-      switch (Holding) {
-      case SEQ:
-        Possable_Seqfield.UpdatePos(MousePos);
-        break;
       }
     }
 
@@ -160,41 +153,20 @@ int main() {
     ClearBackground(LIGHTGRAY);
 
     // Menu field
-    DrawRectangleRounded(Menurec, 0.05, 20, (Color){150, 150, 150, 255});
-    DrawText("Blocks",
-             (Menurec.x + Menurec.width + MENUSPACE) / 2 -
-                 (MeasureText("Blocks", 40) / 2.0),
-             20, 40, BLACK);
+    DrawRectangleRounded(menuRec, 0.05, 20, menuColor);
+    DrawText("Blocks", (menuRec.x + menuRec.width + menuPadding) / 2 - (MeasureText("Blocks", 40) / 2.0), 20, 40, BLACK);
+
+    if (holding != NONE) {
+      mouseField.updatePos(GetMousePosition());
+      mouseField.draw();
+    }
 
     // SeqButton
-    if (SeqButtonHover && !entermode) {
-      SeqButtonColor = {135, 135, 135, 255};
-      DrawRectangleRoundedLinesEx(
-          (Rectangle){(Menurec.x + Menurec.width + MENUSPACE) / 4,
-                      MENUSPACE * 3 + 40, Menurec.width / 2, 35},
-          0.05, 20, 2, BLACK);
-    } else {
-      SeqButtonColor = (Color){180, 180, 180, 255};
-    }
-    DrawRectangleRounded(
-        (Rectangle){(Menurec.x + Menurec.width + MENUSPACE) / 4,
-                    MENUSPACE * 3 + 40, Menurec.width / 2, 35},
-        0.15, 20, SeqButtonColor);
-    DrawText("Sequenz",
-             (MENUSPACE * 2 + Menurec.width) / 2 -
-                 (MeasureText("Sequenz", 19) / 2.0),
-             MENUSPACE * 4 + 40, 19, BLACK);
+    DrawRectangleRounded(seqRec, 0.15, 20, seqButtonColor);
+    DrawText("Sequenz", (menuPadding * 2 + menuRec.width) / 2 - (MeasureText("Sequenz", 19) / 2.0), menuPadding * 4 + 40, 19, BLACK);
 
-    // Seq following cursor
-    if (Possable_Seqfield.rec.x != 0 && Holding == SEQ) {
-      Possable_Seqfield.Draw();
-    }
-
-    for (int i = 0; i < placedSeqs.size(); i++) {
-      placedSeqs[i].Draw();
-      if (entermode) {
-        DrawRectangleLinesEx(placedSeqs[SeqIndexenter].rec, 2, BLACK);
-      }
+    for (int i = 0; i < managers.size(); i++) {
+      managers.at(i).drawAllFields();
     }
     EndDrawing();
   }
