@@ -46,11 +46,10 @@ class SeqField : Field {
 class ManagerBlock {
 public:
   Vector2 pos;
-  std::vector<Field> fields;
+  std::vector<Field> fields = std::vector<Field>();
 
   ManagerBlock(Vector2 pos) {
     this->pos = pos;
-    this->fields = std::vector<Field>();
   }
 
   void appendField(Field field) {
