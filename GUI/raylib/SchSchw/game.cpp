@@ -2,12 +2,6 @@
 
 #include "constants.h"
 
-enum currentScreen {
-  INTROSCREEN = 0,
-  SETTINGSSCREEN = -1,
-  GAME = 1
-};
-
 int main() {
   InitWindow(0, 0, "TEMP_WINDOW");
   Vector2 monitorSizes = (Vector2){static_cast<float>(GetMonitorWidth(0)), static_cast<float>(GetMonitorHeight(0))}; // seems to be safer than (float)
