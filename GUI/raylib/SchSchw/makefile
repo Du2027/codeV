@@ -20,18 +20,18 @@ $(BUILD_DIR)/constants.o: constants.cpp | $(BUILD_DIR)
 	@echo "compiling constants"
 	@${CC} ${CFLAGS} -c constants.cpp -o $(BUILD_DIR)/constants.o
 
-# waterObjects
-$(BUILD_DIR)/waterObject.o: WaterObject.cpp | $(BUILD_DIR)
-	@echo "compiling waterObj"
-	@${CC} ${CFLAGS} -c WaterObject.cpp -o $(BUILD_DIR)/waterObject.o
+# classes
+$(BUILD_DIR)/classes.o: classes.cpp | $(BUILD_DIR)
+	@echo "compiling classes"
+	@${CC} ${CFLAGS} -c classes.cpp -o $(BUILD_DIR)/classes.o
 
-# droplets
-$(BUILD_DIR)/droplet.o: Droplet.cpp | $(BUILD_DIR)
-	@echo "compiling droplet"
-	@${CC} ${CFLAGS} -c Droplet.cpp -o $(BUILD_DIR)/droplet.o
+# gameObjects
+$(BUILD_DIR)/gameObjects.o: gameObjects.cpp | $(BUILD_DIR)
+	@echo "compiling gameObjects"
+	@${CC} ${CFLAGS} -c gameObjects.cpp -o $(BUILD_DIR)/gameObjects.o
 
 # linking
-$(BUILD): $(BUILD_DIR)/game.o $(BUILD_DIR)/waterObject.o $(BUILD_DIR)/droplet.o $(BUILD_DIR)/constants.o | $(BUILD_DIR) 
+$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/game.o | $(BUILD_DIR) 
 	@echo "linking to final"
 	@${CC} ${CFLAGS} $^ -o $@ # $^ for prequisites and $@ for target
 

@@ -1,6 +1,8 @@
 #include <raylib.h>
 
+#include "classes.h"
 #include "constants.h"
+#include "gameObjects.h"
 
 int main() {
   InitWindow(0, 0, "TEMP_WINDOW");
