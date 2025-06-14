@@ -10,10 +10,15 @@ $(BUILD_DIR):
 	@echo "creating build directory"
 	@mkdir -p $(BUILD_DIR)
 
+# WM
+$(BUILD_DIR)/windowManager.o: windowManager.cpp | $(BUILD_DIR)
+	@echo "compiling WM"
+	@${CC} ${CFLAGS} -c windowManager.cpp -o $(BUILD_DIR)/windowManager.o
+
 # game
-$(BUILD_DIR)/game.o: game.cpp | $(BUILD_DIR) # | for a prequisite that must be build beforehand
+$(BUILD_DIR)/introScreen.o: introScreen.cpp | $(BUILD_DIR) # | for a prequisite that must be build beforehand
 	@echo "compiling game"
-	@${CC} ${CFLAGS} -c game.cpp -o $(BUILD_DIR)/game.o
+	@${CC} ${CFLAGS} -c introScreen.cpp -o $(BUILD_DIR)/introScreen.o
 
 # constants
 $(BUILD_DIR)/constants.o: constants.cpp | $(BUILD_DIR)
@@ -31,7 +36,7 @@ $(BUILD_DIR)/gameObjects.o: gameObjects.cpp | $(BUILD_DIR)
 	@${CC} ${CFLAGS} -c gameObjects.cpp -o $(BUILD_DIR)/gameObjects.o
 
 # linking
-$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/game.o | $(BUILD_DIR) 
+$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/introScreen.o $(BUILD_DIR)/windowManager.o | $(BUILD_DIR) 
 	@echo "linking to final"
 	@${CC} ${CFLAGS} $^ -o $@ # $^ for prequisites and $@ for target
 

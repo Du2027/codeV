@@ -1,4 +1,6 @@
 #pragma once
+#include "classes.h"
 #include <raylib.h>
 
-extern Rectangle shieldRect;
+extern PRect shieldRect;
+extern PRect settingsB;

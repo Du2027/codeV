@@ -2,10 +2,21 @@
 #include <raylib.h>
 
 void PRect::updateSize(Vector2 windowDeltaSizes) {
-  x = static_cast<int>(x * windowDeltaSizes.x);
-  width = static_cast<int>(width * windowDeltaSizes.x);
-  y = static_cast<int>(y * windowDeltaSizes.y);
-  height = static_cast<int>(height * windowDeltaSizes.y);
+  x = x * windowDeltaSizes.x;
+  width = width * windowDeltaSizes.x;
+  y = y * windowDeltaSizes.y;
+  height = height * windowDeltaSizes.y;
+}
+
+Rectangle PRect::getRect() {
+  return (Rectangle){x, y, width, height};
+}
+
+void PRect::setRect(Rectangle rec) {
+  x = rec.x;
+  y = rec.y;
+  width = rec.width;
+  height = rec.height;
 }
 
 void WaterObject::addWater(int *water) {
