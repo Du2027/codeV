@@ -17,7 +17,10 @@ Screen IntroScreen(Vector2 windowDeltaScale) {
       Vector2 mousePos = GetMousePosition();
       Rectangle mouseRec = (Rectangle){mousePos.x, mousePos.y, 1, 1};
       if (CheckCollisionRecs(settingsB.getRect(), mouseRec)) {
-        nextScreen = SETTINGSSCREEN;
+        nextScreen = SETTINGSSCREEN; // TODO: change
+        shouldClose = true;
+      } else if (CheckCollisionRecs(startB.getRect(), mouseRec)) {
+        nextScreen = GAME;
         shouldClose = true;
       }
     }
@@ -25,6 +28,8 @@ Screen IntroScreen(Vector2 windowDeltaScale) {
     BeginDrawing();
     ClearBackground(backgroundColor);
     DrawRectangleRec(settingsB.getRect(), RED);
+    DrawRectangleRec(startB.getRect(), BLUE);
+    DrawText("Start!", startB.x, startB.y, 20, BLACK);
     DrawText("Settings", settingsB.x, settingsB.y, 20, BLACK);
     EndDrawing();
 
@@ -32,5 +37,6 @@ Screen IntroScreen(Vector2 windowDeltaScale) {
       shouldClose = true;
     }
   }
+  CloseWindow();
   return nextScreen;
 }

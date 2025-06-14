@@ -4,3 +4,4 @@
 
 extern PRect shieldRect;
 extern PRect settingsB;
+extern PRect startB;

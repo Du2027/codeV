@@ -2,9 +2,13 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "constants.h"
-#include "introScreen.h"
 #include "raylib.h"
+
+#include "constants.h"
+#include "errorScreen.h"
+#include "gameScreen.h"
+#include "introScreen.h"
+#include "settingsScreen.h"
 
 Screen currentScreen = INTROSCREEN;
 
@@ -18,24 +22,24 @@ int main() {
   while (currentScreen != LEAVE) {
     switch (currentScreen) {
     case ERRORSCREEN:
-      // TODO:
+      threadStatus = std::async(std::launch::async, errorScreen, windowDeltaScale);
       break;
     case INTROSCREEN:
       threadStatus = std::async(std::launch::async, IntroScreen, windowDeltaScale); // asyncronosly to show error instead of just crashing
       break;
     case SETTINGSSCREEN:
-      // TODO:
+      threadStatus = std::async(std::launch::async, SettingsScreen, windowDeltaScale);
       break;
     case GAME:
-      // TODO:
+      threadStatus = std::async(std::launch::async, GameScreen, windowDeltaScale);
       break;
     }
 
     try {
       currentScreen = threadStatus.get();
     } catch (const std::runtime_error &e) {
-      printf("THREAD FAILED\n");
       std::cerr << "2nd THREAD FAILED: " << e.what() << std::endl;
+      currentScreen = ERRORSCREEN;
     }
   }
 }

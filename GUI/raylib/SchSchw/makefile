@@ -10,16 +10,6 @@ $(BUILD_DIR):
 	@echo "creating build directory"
 	@mkdir -p $(BUILD_DIR)
 
-# WM
-$(BUILD_DIR)/windowManager.o: windowManager.cpp | $(BUILD_DIR)
-	@echo "compiling WM"
-	@${CC} ${CFLAGS} -c windowManager.cpp -o $(BUILD_DIR)/windowManager.o
-
-# game
-$(BUILD_DIR)/introScreen.o: introScreen.cpp | $(BUILD_DIR) # | for a prequisite that must be build beforehand
-	@echo "compiling game"
-	@${CC} ${CFLAGS} -c introScreen.cpp -o $(BUILD_DIR)/introScreen.o
-
 # constants
 $(BUILD_DIR)/constants.o: constants.cpp | $(BUILD_DIR)
 	@echo "compiling constants"
@@ -35,8 +25,37 @@ $(BUILD_DIR)/gameObjects.o: gameObjects.cpp | $(BUILD_DIR)
 	@echo "compiling gameObjects"
 	@${CC} ${CFLAGS} -c gameObjects.cpp -o $(BUILD_DIR)/gameObjects.o
 
+
+
+# WM
+$(BUILD_DIR)/windowManager.o: windowManager.cpp | $(BUILD_DIR)
+	@echo "compiling WM"
+	@${CC} ${CFLAGS} -c windowManager.cpp -o $(BUILD_DIR)/windowManager.o
+
+# IntroScreen
+$(BUILD_DIR)/introScreen.o: introScreen.cpp | $(BUILD_DIR) # | for a prequisite that must be build beforehand
+	@echo "compiling introScreen"
+	@${CC} ${CFLAGS} -c introScreen.cpp -o $(BUILD_DIR)/introScreen.o
+
+# SettingsScreen
+$(BUILD_DIR)/settingsScreen.o: settingsScreen.cpp | $(BUILD_DIR)
+	@echo "compiling settingsScreen"
+	@${CC} ${CFLAGS} -c settingsScreen.cpp -o $(BUILD_DIR)/settingsScreen.o
+
+# GameScreen
+$(BUILD_DIR)/gameScreen.o: gameScreen.cpp | $(BUILD_DIR)
+	@echo "compiling gameScreen"
+	@${CC} ${CFLAGS} -c gameScreen.cpp -o $(BUILD_DIR)/gameScreen.o
+
+# GameScreen
+$(BUILD_DIR)/errorScreen.o: errorScreen.cpp | $(BUILD_DIR)
+	@echo "compiling errorScreen"
+	@${CC} ${CFLAGS} -c errorScreen.cpp -o $(BUILD_DIR)/errorScreen.o
+
+
+
 # linking
-$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/introScreen.o $(BUILD_DIR)/windowManager.o | $(BUILD_DIR) 
+$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/introScreen.o $(BUILD_DIR)/windowManager.o $(BUILD_DIR)/settingsScreen.o $(BUILD_DIR)/gameScreen.o  $(BUILD_DIR)/errorScreen.o | $(BUILD_DIR) 
 	@echo "linking to final"
 	@${CC} ${CFLAGS} $^ -o $@ # $^ for prequisites and $@ for target
 

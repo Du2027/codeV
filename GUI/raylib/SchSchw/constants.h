@@ -13,3 +13,4 @@ extern const int fpsc;
 extern const Vector2 windowSize;
 
 extern const Color backgroundColor;
+extern const Color errorSBackgroundColor;
