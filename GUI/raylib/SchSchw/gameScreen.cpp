@@ -7,6 +7,7 @@ Screen GameScreen(Vector2 windowDeltaScales) {
   InitWindow(windowSize.x * windowDeltaScales.x, windowSize.y * windowDeltaScales.y, "SchSchwGame");
   SetTargetFPS(fpsc);
   bool shouldClose = false;
+  Screen nextScreen = INTROSCREEN;
 
   while (!shouldClose) {
     windowDeltaScales.x = GetMonitorWidth(0) / 2560.0f;
@@ -27,8 +28,9 @@ Screen GameScreen(Vector2 windowDeltaScales) {
 
     if (WindowShouldClose()) {
       shouldClose = true;
+      nextScreen = LEAVE;
     }
   }
   CloseWindow();
-  return INTROSCREEN;
+  return nextScreen;
 }

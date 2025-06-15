@@ -35,6 +35,7 @@ Screen IntroScreen(Vector2 windowDeltaScale) {
 
     if (WindowShouldClose()) {
       shouldClose = true;
+      nextScreen = LEAVE;
     }
   }
   CloseWindow();
