@@ -11,6 +11,7 @@
 #include "settingsScreen.h"
 
 Screen currentScreen = INTROSCREEN;
+Screen lastScreen = INTROSCREEN;
 
 int main() {
   InitWindow(0, 0, "TEMP_WINDOW");
@@ -26,12 +27,15 @@ int main() {
       break;
     case INTROSCREEN:
       threadStatus = std::async(std::launch::async, IntroScreen, windowDeltaScale); // asyncronosly to show error instead of just crashing
+      lastScreen = INTROSCREEN;
       break;
     case SETTINGSSCREEN:
-      threadStatus = std::async(std::launch::async, SettingsScreen, windowDeltaScale);
+      threadStatus = std::async(std::launch::async, SettingsScreen, windowDeltaScale, lastScreen);
+      lastScreen = SETTINGSSCREEN;
       break;
     case GAME:
       threadStatus = std::async(std::launch::async, GameScreen, windowDeltaScale);
+      lastScreen = GAME;
       break;
     }
 

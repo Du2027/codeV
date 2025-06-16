@@ -2,11 +2,10 @@
 #include "constants.h"
 #include "raylib.h"
 
-Screen SettingsScreen(Vector2 windowDeltaScales) {
+Screen SettingsScreen(Vector2 windowDeltaScales, Screen lastScreen) {
   InitWindow(windowSize.x * windowDeltaScales.x, windowSize.y * windowDeltaScales.y, "SchSchwGame");
   SetTargetFPS(fpsc);
   bool shouldClose = false;
-  Screen nextScreen = INTROSCREEN;
 
   while (!shouldClose) {
     windowDeltaScales.x = GetMonitorWidth(0) / 2560.0f;
@@ -23,9 +22,8 @@ Screen SettingsScreen(Vector2 windowDeltaScales) {
 
     if (WindowShouldClose()) {
       shouldClose = true;
-      nextScreen = LEAVE;
     }
   }
   CloseWindow();
-  return nextScreen;
+  return lastScreen;
 };
