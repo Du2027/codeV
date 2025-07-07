@@ -2,11 +2,11 @@
 #include "constants.h"
 #include "raylib.h"
 
-Screen errorScreen(Vector2 windowDeltaScales) {
+Screen errorScreen(Vector2 windowDeltaScales, const char* message) {
   InitWindow(300 * windowDeltaScales.x, 170 * windowDeltaScales.y, "SchSchwGame");
   SetTargetFPS(fpsc);
   bool shouldClose = false;
-
+  
   while (!shouldClose) {
     windowDeltaScales.x = GetMonitorWidth(0) / 2560.0f;
     windowDeltaScales.y = GetMonitorHeight(0) / 1440.0f;
@@ -17,7 +17,7 @@ Screen errorScreen(Vector2 windowDeltaScales) {
     }
 
     BeginDrawing();
-    DrawText("An error occured!", 20 * windowDeltaScales.x, 20 * windowDeltaScales.y, 25, BLACK);
+    DrawText(message, 20 * windowDeltaScales.x, 20 * windowDeltaScales.y, 25, BLACK);
     DrawText("X", 220 * windowDeltaScales.x, 100 * windowDeltaScales.y, 45, WHITE);
     ClearBackground(errorSBackgroundColor);
     EndDrawing();

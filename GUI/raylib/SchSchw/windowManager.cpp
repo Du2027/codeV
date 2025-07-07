@@ -23,7 +23,7 @@ int main() {
   while (currentScreen != LEAVE) {
     switch (currentScreen) {
     case ERRORSCREEN:
-      threadStatus = std::async(std::launch::async, errorScreen, windowDeltaScale);
+      threadStatus = std::async(std::launch::async, errorScreen, windowDeltaScale, "An Error with the Thread occured!");
       break;
     case INTROSCREEN:
       threadStatus = std::async(std::launch::async, IntroScreen, windowDeltaScale); // asyncronosly to show error instead of just crashing

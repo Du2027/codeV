@@ -20,11 +20,6 @@ $(BUILD_DIR)/classes.o: classes.cpp | $(BUILD_DIR)
 	@echo "compiling classes"
 	@${CC} ${CFLAGS} -c classes.cpp -o $(BUILD_DIR)/classes.o
 
-# gameObjects
-$(BUILD_DIR)/gameObjects.o: gameObjects.cpp | $(BUILD_DIR)
-	@echo "compiling gameObjects"
-	@${CC} ${CFLAGS} -c gameObjects.cpp -o $(BUILD_DIR)/gameObjects.o
-
 
 
 # WM
@@ -55,7 +50,7 @@ $(BUILD_DIR)/errorScreen.o: errorScreen.cpp | $(BUILD_DIR)
 
 
 # linking
-$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/gameObjects.o $(BUILD_DIR)/introScreen.o $(BUILD_DIR)/windowManager.o $(BUILD_DIR)/settingsScreen.o $(BUILD_DIR)/gameScreen.o  $(BUILD_DIR)/errorScreen.o | $(BUILD_DIR) 
+$(BUILD): $(BUILD_DIR)/constants.o $(BUILD_DIR)/classes.o $(BUILD_DIR)/introScreen.o $(BUILD_DIR)/windowManager.o $(BUILD_DIR)/settingsScreen.o $(BUILD_DIR)/gameScreen.o  $(BUILD_DIR)/errorScreen.o | $(BUILD_DIR) 
 	@echo "linking to final"
 	@${CC} ${CFLAGS} $^ -o $@ # $^ for prequisites and $@ for target
 

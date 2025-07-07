@@ -1,4 +1,5 @@
 #pragma once
+#include "classes.h"
 #include <raylib.h>
 
 enum Screen {
@@ -9,8 +10,10 @@ enum Screen {
   GAME = 2
 };
 
-extern const int fpsc;
-extern const Vector2 windowSize;
+// settings
+extern int fpsc;
+extern Vector2 windowSize;
 
+// color-related
 extern const Color backgroundColor;
 extern const Color errorSBackgroundColor;
