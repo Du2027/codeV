@@ -1,8 +1,14 @@
+#include <cmath>
+#include <format>
 #include <raylib.h>
 #include <string>
 #include <vector>
+#include "../rayhelper/rayhelper.hpp"
+
+using namespace PGUI;
 
 class plant {
+  std::string title;
   Vector2 positionVec;
   double bewaesserungsFequenz; // 1.5 2
   bool heuteBewaessert;        //??
@@ -10,12 +16,14 @@ class plant {
 
 public:
   plant() {
+    this->title = "";
     this->bewaesserungsFequenz = 0;
     this->heuteBewaessert = false;
     this->positionVec = (Vector2){0, 0};
     this->textureID = -1;
   }
-  plant(double bewaesserungsFrequenz, bool heuteBewaessert, Vector2 relPosition, int textureID) {
+  plant(std::string title, double bewaesserungsFrequenz, bool heuteBewaessert, Vector2 relPosition, int textureID) {
+    this->title = title;
     this->bewaesserungsFequenz = bewaesserungsFrequenz;
     this->heuteBewaessert = heuteBewaessert;
     this->positionVec = relPosition;
@@ -38,6 +46,9 @@ public:
   }
   Rectangle getRec(float plantSize) {
     return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize};
+  }
+  std::string getTitle() {
+    return this->title;
   }
 };
 
@@ -62,6 +73,7 @@ int main() {
 
   float plantSize = windowSize.x / 100;
   float menuBarMargin = 14;
+  float infoBarMargin = 10;
   std::string filePath = "";
   bool isHolding = false;
   plant holdPlant;
@@ -69,6 +81,7 @@ int main() {
   bool hasSelected = false;
   int selectedIndex;
   bool newBPressed = false;
+  int frequenzyNum = 0;
 
   Rectangle menuBarRec = (Rectangle){0, 0, windowSize.x, windowSize.y / 35};
 
@@ -80,13 +93,16 @@ int main() {
 
   Texture uploadTexture = LoadTextureFromImage(uploadImage);
   Texture downloadTexture = LoadTextureFromImage(downloadImage);
+  Texture plantTextures[5];
 
-  Rectangle xRec = (Rectangle){};
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
-  Rectangle selectionRec = (Rectangle){0, menuBarRec.height, windowSize.x / 6, windowSize.y};
+  Rectangle selectionRec = (Rectangle){0, menuBarRec.height, windowSize.x / 6, windowSize.y - menuBarRec.height};
   Rectangle menuBarLinesRec = (Rectangle){downloadRec.x + downloadRec.width + menuBarMargin, uploadRec.y - 2, menuBarRec.width - (menuBarMargin * 4) - (uploadRec.width * 2), uploadRec.height + 4};
   Rectangle newBRec = (Rectangle){selectionRec.width / 16, selectionRec.height - selectionRec.height / 10.0f, (selectionRec.width / 8) * 7, selectionRec.height / 20};
+  Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
+  Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
+  Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 9 + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
 
   Color backgroudColor = GetColor(0x2d1c2eff); // 0x as prefix to show its a hexadecimal
   Color secondaryBackgroundColor = GetColor(0x472f3dff);
@@ -113,7 +129,7 @@ int main() {
       }
 
       // plant related
-      if (hasSelected && !CheckCollisionRecs(plants.at(selectedIndex).getRec(plantSize), mouseRec)) {
+      if (hasSelected && !CheckCollisionRecs(plants.at(selectedIndex).getRec(plantSize), mouseRec) && !CheckCollisionRecs(mouseRec, infoBarRec)) {
         hasSelected = false;
       }
       if (!hasSelected) {
@@ -156,7 +172,7 @@ int main() {
 
     BeginDrawing();
     ClearBackground(backgroudColor);
-    
+
     // menu bar
     DrawRectangleRec(menuBarRec, secondaryBackgroundColor);
     DrawRectangleRoundedLines(menuBarLinesRec, 0.2, 8, mainColor);
@@ -170,10 +186,9 @@ int main() {
       DrawRectangleRoundedLines(newBRec, 0.6, 50, mainColor);
     }
     DrawText("+", newBRec.x + newBRec.width / 2, newBRec.y + newBRec.height / 3, 20, WHITE);
-    
+
     // info bar
     // WIP
-    EndDrawing();
 
     Color plantColor;
     for (int i = 0; i < plants.size(); i++) {
@@ -185,6 +200,30 @@ int main() {
       DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), plantSize, plantSize, plantColor);
     }
 
+    if (hasSelected) {
+      DrawRectangleRec(infoBarRec, secondaryBackgroundColor);
+      DrawRectangleRounded(metaSectionRec, 0.06, 20, mainDarkColor);
+      DrawText("Infos", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin, 38, GRAY);
+      float fontHeight = MeasureTextEx(GetFontDefault(), "X", 30, 1).y;
+      DrawText(std::format("title: {}", plants.at(selectedIndex).getTitle()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
+
+      DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
+      for (int i = 0; i < 5; i++) {
+        DrawRectangle(infoBarRec.x + infoBarMargin*(i + 1) + plantSize*i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
+      }
+      DrawText("Freq:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
+      frequenzyNum = PGUI::DrawUpDownButtons(frequenzyChangeRec, mousePos);
+      DrawText("Wet:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 11 + fontHeight * 4 + plantSize, 30, WHITE);
+      
+      DrawText("Meta", metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin, 38, GRAY);
+      int xPos = std::round(plants.at(selectedIndex).getX() - selectionRec.width);
+      int yPos = std::round(plants.at(selectedIndex).getY() - menuBarRec.height);
+      DrawText(std::format("Pos    {}:{}", xPos, yPos).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
+
+      DrawText(std::format("Size   {}:{}", plantSize, plantSize).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
+
+      DrawText(std::format("Index  {}", selectedIndex).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 7 + fontHeight * 3, 30, WHITE);
+    }
     if (isHolding) {
       DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
     }
@@ -192,6 +231,7 @@ int main() {
     if (WindowShouldClose()) {
       shouldClose = true;
     }
+    EndDrawing();
   }
   CloseWindow();
   return 0;

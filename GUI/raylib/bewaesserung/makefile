@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -I. -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -std=c++11 -pthread
+CFLAGS = -I. -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -std=c++20 -pthread
 
 BUILD_DIR = build
 BUILD = $(BUILD_DIR)/Bewaesserung.bin
