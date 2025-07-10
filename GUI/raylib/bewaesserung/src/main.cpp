@@ -7,6 +7,7 @@ class plant {
   double bewaesserungsFequenz; // 1.5 2
   bool heuteBewaessert;        //??
   int textureID;
+
 public:
   plant() {
     this->bewaesserungsFequenz = 0;
@@ -20,7 +21,7 @@ public:
     this->positionVec = relPosition;
     this->textureID = textureID;
   }
-  
+
   void bewaessert() { this->heuteBewaessert = true; }
   void changeFrequenz(double frequenz) { this->bewaesserungsFequenz = frequenz; }
   void changeTexture(int textureID) { this->textureID = textureID; }
@@ -35,7 +36,21 @@ public:
   float getY() {
     return this->positionVec.y;
   }
+  Rectangle getRec(float plantSize) {
+    return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize};
+  }
 };
+
+int getPlantIndex(std::vector<plant> plants, float plantSize, Rectangle mouseRec) {
+  int selectedIndex = -1;
+  for (int i = 0; i < plants.size(); i++) {
+    if (CheckCollisionRecs(plants.at(i).getRec(plantSize), mouseRec)) {
+      selectedIndex = i;
+      break;
+    }
+  }
+  return selectedIndex;
+}
 
 int main() {
   InitWindow(0, 0, "TEMP_WINDOW");
@@ -45,11 +60,15 @@ int main() {
   InitWindow(windowSize.x, windowSize.y, "Bewaesserung");
   SetTargetFPS(144);
 
+  float plantSize = windowSize.x / 100;
   float menuBarMargin = 14;
   std::string filePath = "";
   bool isHolding = false;
   plant holdPlant;
   std::vector<plant> plants; // Initialisieren???
+  bool hasSelected = false;
+  int selectedIndex;
+  bool newBPressed = false;
 
   Rectangle menuBarRec = (Rectangle){0, 0, windowSize.x, windowSize.y / 35};
 
@@ -75,59 +94,99 @@ int main() {
   Color mainDarkColor = GetColor(0x281628ff);
 
   Color newBColor;
-  Color tmpColor;
 
   bool shouldClose = false;
   while (!shouldClose) {
     Vector2 mousePos = GetMousePosition();
     Rectangle mouseRec = (Rectangle){mousePos.x, mousePos.y, 1, 1};
-    if (IsMouseButtonDown(0)) {
+    if (IsMouseButtonPressed(0)) {
+      // buttons
       if (CheckCollisionRecs(uploadRec, mouseRec)) {
         // WIP
       } else if (CheckCollisionRecs(downloadRec, mouseRec)) {
         // WIP
-      }
-
-      else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
+      } else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
         isHolding = true;
         holdPlant = plant();
         holdPlant.addPosition(mousePos);
-      } else if (isHolding == true) {
+        holdPlant.changePosition((Vector2){-plantSize, -plantSize}); // because plant is next to cursor
+      }
+
+      // plant related
+      if (hasSelected && !CheckCollisionRecs(plants.at(selectedIndex).getRec(plantSize), mouseRec)) {
+        hasSelected = false;
+      }
+      if (!hasSelected) {
+        selectedIndex = getPlantIndex(plants, plantSize, mouseRec);
+        if (selectedIndex > -1) {
+          hasSelected = true;
+        }
+      }
+      if (!isHolding && hasSelected && CheckCollisionRecs(mouseRec, plants.at(selectedIndex).getRec(plantSize))) {
+        isHolding = true;
+        holdPlant = plants.at(selectedIndex);
+        plants.erase(plants.begin() + selectedIndex);
+        hasSelected = false;
+      }
+    }
+    if (IsMouseButtonDown(0)) {
+      if (isHolding == true) {
         holdPlant.changePosition(GetMouseDelta()); // untested
       }
     } else if (isHolding) {
       isHolding = false;
       if (!CheckCollisionRecs(selectionRec, mouseRec)) {
         plants.push_back(holdPlant);
+        hasSelected = true;
+        selectedIndex = plants.size() - 1;
       }
     }
 
     if (CheckCollisionRecs(newBRec, mouseRec)) {
       newBColor = mainDarkColor;
+      if (IsMouseButtonDown(0)) {
+        newBPressed = true;
+      } else {
+        newBPressed = false;
+      }
     } else {
       newBColor = mainColor;
+      newBPressed = false;
     }
 
     BeginDrawing();
-    if (isHolding) {
-      tmpColor = RED;
-    } else {
-      tmpColor = backgroudColor;
-    }
-    ClearBackground(tmpColor);
-
+    ClearBackground(backgroudColor);
+    
     // menu bar
     DrawRectangleRec(menuBarRec, secondaryBackgroundColor);
     DrawRectangleRoundedLines(menuBarLinesRec, 0.2, 8, mainColor);
     DrawTexture(uploadTexture, uploadRec.x, uploadRec.y, WHITE);
     DrawTexture(downloadTexture, downloadRec.x, downloadRec.y, WHITE);
+
+    // selection bar
     DrawRectangleRec(selectionRec, secondaryBackgroundColor);
     DrawRectangleRounded(newBRec, 0.6, 50, newBColor);
+    if (newBPressed) {
+      DrawRectangleRoundedLines(newBRec, 0.6, 50, mainColor);
+    }
     DrawText("+", newBRec.x + newBRec.width / 2, newBRec.y + newBRec.height / 3, 20, WHITE);
+    
+    // info bar
+    // WIP
     EndDrawing();
+
+    Color plantColor;
     for (int i = 0; i < plants.size(); i++) {
-      DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), 5, 5, PINK);
-      // if holding draw with offset
+      if (i != selectedIndex || hasSelected == false) {
+        plantColor = PINK;
+      } else {
+        plantColor = BLACK;
+      }
+      DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), plantSize, plantSize, plantColor);
+    }
+
+    if (isHolding) {
+      DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
     }
 
     if (WindowShouldClose()) {
