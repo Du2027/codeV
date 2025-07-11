@@ -1,9 +1,14 @@
 #include "../rayhelper/rayhelper.hpp"
 #include <cmath>
+#include <cstdio>
 #include <format>
+#include <fstream>
+#include <iostream>
+#include <ostream>
 #include <raylib.h>
 #include <string>
 #include <vector>
+#include <sstream> // Required for std::istringstream
 
 using namespace PGUI;
 
@@ -70,7 +75,7 @@ public:
   int &getTextureIdRef() {
     return textureID;
   }
-  std::string& getTitleRef(){
+  std::string &getTitleRef() {
     return title;
   }
 
@@ -130,7 +135,7 @@ int main() {
   int frequenzyNum = 0;
   int frameCounter = 0;
   int bufferBeginn = 0;
-  
+
   Rectangle menuBarRec = (Rectangle){0, 0, windowSize.x, windowSize.y / 35};
 
   Image uploadImage = LoadImage("assets/file_up.png");
@@ -151,21 +156,18 @@ int main() {
 
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
-  
-  
+
   Rectangle selectionRec = (Rectangle){0, menuBarRec.height, windowSize.x / 6, windowSize.y - menuBarRec.height};
   Rectangle menuBarLinesRec = (Rectangle){downloadRec.x + downloadRec.width + menuBarMargin, uploadRec.y - 2, menuBarRec.width - (menuBarMargin * 4) - (uploadRec.width * 2), uploadRec.height + 4};
   Rectangle newBRec = (Rectangle){selectionRec.width / 16, selectionRec.height - selectionRec.height / 10.0f, (selectionRec.width / 8) * 7, selectionRec.height / 20};
-  
-  
+
   Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
   Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
   Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 8.5f + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
-  Rectangle plantTitleLabelRec = (Rectangle){infoBarRec.x + (infoBarMargin * 2) + MeasureText("title: ", 30), infoBarRec.y + infoBarMargin * 3 + fontHeight, infoBarRec.width - infoBarMargin *3 - static_cast<float>( MeasureText("title: ", 30)), fontHeight};
+  Rectangle plantTitleLabelRec = (Rectangle){infoBarRec.x + (infoBarMargin * 2) + MeasureText("title: ", 30), infoBarRec.y + infoBarMargin * 3 + fontHeight, infoBarRec.width - infoBarMargin * 3 - static_cast<float>(MeasureText("title: ", 30)), fontHeight};
   Rectangle wetCheckBoxRec = (Rectangle){infoBarRec.x + infoBarMargin * 2 + MeasureText("Wet: ", 30), infoBarRec.y + infoBarMargin * 10 + fontHeight * 4 + plantSize, 50, 50};
   Rectangle iconsRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize * 5 + infoBarMargin * 4, plantSize};
-  
-  
+
   Color backgroudColor = GetColor(0x2d1c2eff); // 0x as prefix to show its a hexadecimal
   Color secondaryBackgroundColor = GetColor(0x472f3dff);
   Color mainColor = GetColor(0xa99089ff);
@@ -182,7 +184,21 @@ int main() {
     if (IsMouseButtonPressed(0) && !isEditing) {
       // buttons
       if (CheckCollisionRecs(uploadRec, mouseRec)) {
-        // WIP
+        std::ifstream inputFile("save.txt");
+        std::string line;
+        int plantc = 0;
+        while (getline(inputFile, line)) {
+          std::istringstream iss(line); // Create an input string stream
+          std::string attribute;
+          std::vector<std::string> attributes;
+
+          while (std::getline(iss, attribute, ';')) { // Read until the delimiter
+            attributes.push_back(attribute);
+          }
+          plants[plantc] = plant() 
+          //std::string title, int bewaesserungsFrequenz, int nennerFrequenz, bool bewaessert, Vector2 relPosition, int textureID
+            plantc++;
+        }
       } else if (CheckCollisionRecs(downloadRec, mouseRec)) {
         // WIP
       } else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
@@ -285,7 +301,7 @@ int main() {
       DrawText("Infos", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin, 38, GRAY);
       DrawText("title:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
       PGUI::DrawLabel(plantTitleLabelRec, plants.at(selectedIndex).getTitleRef(), 30, isEditing, mousePos, frameCounter, bufferBeginn);
-      
+
       DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
       PGUI::DrawCheckButtonGroup_Textures(iconsRec, (Vector2){plantSize, plantSize}, 5, plantTextures, mousePos, infoBarMargin, plants.at(selectedIndex).getTextureIdRef());
 
@@ -311,10 +327,12 @@ int main() {
       }
     }
 
-    if(frameCounter == 100*FPSC){
+    if (frameCounter == 100 * FPSC) {
       frameCounter = 0;
-    }else{frameCounter++;}
-    
+    } else {
+      frameCounter++;
+    }
+
     if (WindowShouldClose()) {
       shouldClose = true;
     }
