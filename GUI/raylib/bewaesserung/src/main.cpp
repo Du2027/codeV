@@ -12,28 +12,27 @@ class plant {
   Vector2 positionVec;
   int bewaesserungsFequenz; // 1.5 2
   int nennerFrequenz;       // for 1/2 or 1/8
-  bool heuteBewaessert;     //??
   int textureID;
+  bool bewaessert;     //??
 
 public:
   plant() {
     this->title = "";
     this->bewaesserungsFequenz = 1;
     this->nennerFrequenz = 0;
-    this->heuteBewaessert = false;
+    this->bewaessert = false;
     this->positionVec = (Vector2){0, 0};
     this->textureID = -1;
   }
-  plant(std::string title, int bewaesserungsFrequenz, int nennerFrequenz, bool heuteBewaessert, Vector2 relPosition, int textureID) {
+  plant(std::string title, int bewaesserungsFrequenz, int nennerFrequenz, bool bewaessert, Vector2 relPosition, int textureID) {
     this->title = title;
     this->bewaesserungsFequenz = bewaesserungsFrequenz;
     this->nennerFrequenz = nennerFrequenz;
-    this->heuteBewaessert = heuteBewaessert;
+    this->bewaessert = bewaessert;
     this->positionVec = relPosition;
     this->textureID = textureID;
   }
-
-  void bewaessert() { this->heuteBewaessert = true; }
+  
   void changeFrequenz(double frequenz) { this->bewaesserungsFequenz = frequenz; }
   void changeTexture(int textureID) { this->textureID = textureID; }
   void addPosition(Vector2 position) { this->positionVec = position; }
@@ -63,11 +62,21 @@ public:
     }
   }
 
+  bool& getBewaessertRef(){
+    return bewaessert;
+  }
+  int& getTextureIdRef(){
+    return textureID;
+  }
+
   float getX() {
     return this->positionVec.x;
   }
   float getY() {
     return this->positionVec.y;
+  }
+  int getTextureId(){
+    return this->textureID;
   }
   Rectangle getRec(float plantSize) {
     return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize};
@@ -101,9 +110,10 @@ int main() {
   InitWindow(windowSize.x, windowSize.y, "Bewaesserung");
   SetTargetFPS(144);
 
-  float plantSize = windowSize.x / 100;
+  float plantSize = windowSize.x / 50;
   float menuBarMargin = 14;
   float infoBarMargin = 10;
+  float fontHeight = MeasureTextEx(GetFontDefault(), "X", 30, 1).y;
   std::string filePath = "";
   bool isHolding = false;
   plant holdPlant;
@@ -117,6 +127,7 @@ int main() {
 
   Image uploadImage = LoadImage("assets/file_up.png");
   Image downloadImage = LoadImage("assets/file_down.png");
+  Image temp_plantImages;
 
   ImageResize(&uploadImage, menuBarRec.height - 17, menuBarRec.height - 20); // nur 5x2 Pixel auf 720p???
   ImageResize(&downloadImage, uploadImage.width, uploadImage.height);
@@ -124,6 +135,11 @@ int main() {
   Texture uploadTexture = LoadTextureFromImage(uploadImage);
   Texture downloadTexture = LoadTextureFromImage(downloadImage);
   Texture plantTextures[5];
+  for (int i = 0; i < 5; i++) {
+    temp_plantImages = LoadImage(std::format("assets/plant{}.png", i + 1).c_str());
+    ImageResize(&temp_plantImages, static_cast<int>(plantSize), static_cast<int>(plantSize));
+    plantTextures[i] = LoadTextureFromImage(temp_plantImages);
+  }
 
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
@@ -133,7 +149,9 @@ int main() {
   Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
   Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
   Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 8.5f + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
-
+  Rectangle wetCheckBoxRec = (Rectangle){infoBarRec.x + infoBarMargin * 2 + MeasureText("Wet: ", 30), infoBarRec.y + infoBarMargin * 10 + fontHeight * 4 + plantSize, 50, 50};
+  Rectangle iconsRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize * 5 + infoBarMargin * 4, plantSize};
+  
   Color backgroudColor = GetColor(0x2d1c2eff); // 0x as prefix to show its a hexadecimal
   Color secondaryBackgroundColor = GetColor(0x472f3dff);
   Color mainColor = GetColor(0xa99089ff);
@@ -240,23 +258,29 @@ int main() {
       } else {
         plantColor = BLACK;
       }
-      DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), plantSize, plantSize, plantColor);
+      if(plants.at(i).getTextureId() <= -1 || plants.at(i).getTextureId() >= 5){
+        DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), plantSize, plantSize, plantColor);
+      }else {
+        DrawTexture(plantTextures[plants.at(i).getTextureId()], plants.at(i).getX(), plants.at(i).getY(), WHITE);
+      }
     }
 
     if (hasSelected) {
       DrawRectangleRec(infoBarRec, secondaryBackgroundColor);
       DrawRectangleRounded(metaSectionRec, 0.06, 20, mainDarkColor);
       DrawText("Infos", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin, 38, GRAY);
-      float fontHeight = MeasureTextEx(GetFontDefault(), "X", 30, 1).y;
       DrawText(std::format("title: {}", plants.at(selectedIndex).getTitle()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
 
       DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
-      for (int i = 0; i < 5; i++) {
-        DrawRectangle(infoBarRec.x + infoBarMargin * (i + 1) + plantSize * i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
-      }
+      //for (int i = 0; i < 5; i++) {
+      //  DrawRectangle(infoBarRec.x + infoBarMargin * (i + 1) + plantSize * i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
+      //}
+      PGUI::DrawCheckButtonGroup_Textures(iconsRec, (Vector2){plantSize, plantSize}, 5, plantTextures, mousePos, infoBarMargin, plants.at(selectedIndex).getTextureIdRef());
+      
       DrawText(std::format("Freq: every {} Day", plants.at(selectedIndex).getFreqStr()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
       frequenzyNum = PGUI::DrawUpDownButtons(frequenzyChangeRec, mousePos);
       DrawText("Wet:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 11 + fontHeight * 4 + plantSize, 30, WHITE);
+      PGUI::DrawCheckBox(wetCheckBoxRec, plants.at(selectedIndex).getBewaessertRef(), mousePos);
 
       DrawText("Meta", metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin, 38, GRAY);
       int xPos = std::round(plants.at(selectedIndex).getX() - selectionRec.width);

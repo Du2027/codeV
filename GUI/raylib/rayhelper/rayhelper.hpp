@@ -24,6 +24,24 @@ Rectangle getMouseRec(Vector2 mousePos) {
 void DrawTextbox(Rectangle rec, std::string displayString) {
 }
 
+void DrawCheckBox(Rectangle rec, bool& status, Vector2 mousePos){
+  if(IsMouseButtonPressed(0)){
+    if(CheckCollisionRecs(rec, getMouseRec(mousePos))){
+      status = !status;
+    }
+  }
+  switch (status) {
+    case true:
+      DrawRectangleRec(rec, backgroundColor);
+      DrawRectangleLinesEx(rec, lineThickness + 3, linesColor);
+      break;
+    case false:
+      DrawRectangleRec(rec, linesColor);
+      DrawRectangleLinesEx(rec, lineThickness + 3, backgroundColor);
+      break;
+  }
+}
+
 int DrawUpDownButtons(Rectangle rec, Vector2 mousePos) {
   int pressed = 0; // 1 top, -1 bottom
   Rectangle mouseRec = getMouseRec(mousePos);
@@ -49,5 +67,31 @@ int DrawUpDownButtons(Rectangle rec, Vector2 mousePos) {
     }
   }
   return pressed;
+}
+
+void DrawCheckButtonGroup_Textures(Rectangle allRec, Vector2 boxSize, int count, Texture textures[], Vector2 mousePos, int padding, int& selectedTextureId){
+  /* validation
+  if(allRec.height < boxSize.y){
+    return -1;
+  }
+  else if((boxSize.x * count) + (padding * count - 1) > allRec.width){
+    return -1;
+    }*/
+  
+  Rectangle recs[count];
+  for(int i = 0; i < count; i++){ // maybe in one loop
+    recs[i] = (Rectangle){allRec.x + padding * i + boxSize.x * i, allRec.y, boxSize.x, boxSize.y};
+    DrawTexture(textures[i], recs[i].x, recs[i].y, WHITE);
+    if(i == selectedTextureId){DrawRectangleLinesEx(recs[i], lineThickness+3, backgroundColor);}
+  }
+  
+  Rectangle mouseRec = getMouseRec(mousePos);
+  if(CheckCollisionRecs(allRec, mouseRec) && IsMouseButtonPressed(0)){
+    for (int i = 0; i < count; i++) {
+      if(CheckCollisionRecs(recs[i], mouseRec)){
+        selectedTextureId = i;
+      }
+    }
+  }
 }
 } // namespace PGUI
