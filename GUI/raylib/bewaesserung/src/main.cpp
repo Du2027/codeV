@@ -1,30 +1,33 @@
+#include "../rayhelper/rayhelper.hpp"
 #include <cmath>
 #include <format>
 #include <raylib.h>
 #include <string>
 #include <vector>
-#include "../rayhelper/rayhelper.hpp"
 
 using namespace PGUI;
 
 class plant {
   std::string title;
   Vector2 positionVec;
-  double bewaesserungsFequenz; // 1.5 2
-  bool heuteBewaessert;        //??
+  int bewaesserungsFequenz; // 1.5 2
+  int nennerFrequenz;       // for 1/2 or 1/8
+  bool heuteBewaessert;     //??
   int textureID;
 
 public:
   plant() {
     this->title = "";
-    this->bewaesserungsFequenz = 0;
+    this->bewaesserungsFequenz = 1;
+    this->nennerFrequenz = 0;
     this->heuteBewaessert = false;
     this->positionVec = (Vector2){0, 0};
     this->textureID = -1;
   }
-  plant(std::string title, double bewaesserungsFrequenz, bool heuteBewaessert, Vector2 relPosition, int textureID) {
+  plant(std::string title, int bewaesserungsFrequenz, int nennerFrequenz, bool heuteBewaessert, Vector2 relPosition, int textureID) {
     this->title = title;
     this->bewaesserungsFequenz = bewaesserungsFrequenz;
+    this->nennerFrequenz = nennerFrequenz;
     this->heuteBewaessert = heuteBewaessert;
     this->positionVec = relPosition;
     this->textureID = textureID;
@@ -38,6 +41,28 @@ public:
     this->positionVec.x += deltaPosition.x;
     this->positionVec.y += deltaPosition.y;
   }
+  void addToFreq() {
+    if (bewaesserungsFequenz > 0) {
+      bewaesserungsFequenz++;
+    } else if (nennerFrequenz == 2) {
+      nennerFrequenz = 1;
+      bewaesserungsFequenz = 1;
+    } else if (nennerFrequenz > 2) {
+      nennerFrequenz = nennerFrequenz / 2;
+    }
+  }
+
+  void subToFreq() { // sub for substract
+    if (bewaesserungsFequenz > 1) {
+      bewaesserungsFequenz--;
+    } else if (bewaesserungsFequenz == 1) {
+      bewaesserungsFequenz = 0;
+      nennerFrequenz = 2;
+    } else if (nennerFrequenz >= 2) {
+      nennerFrequenz = nennerFrequenz * 2;
+    }
+  }
+
   float getX() {
     return this->positionVec.x;
   }
@@ -49,6 +74,11 @@ public:
   }
   std::string getTitle() {
     return this->title;
+  }
+  std::string getFreqStr(){
+    std::string freqStr = "";
+    (nennerFrequenz >= 2) ? freqStr = std::format("1/{}", nennerFrequenz) : freqStr = std::format("{}", bewaesserungsFequenz);
+    return freqStr;
   }
 };
 
@@ -102,7 +132,7 @@ int main() {
   Rectangle newBRec = (Rectangle){selectionRec.width / 16, selectionRec.height - selectionRec.height / 10.0f, (selectionRec.width / 8) * 7, selectionRec.height / 20};
   Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
   Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
-  Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 9 + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
+  Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 8.5f + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
 
   Color backgroudColor = GetColor(0x2d1c2eff); // 0x as prefix to show its a hexadecimal
   Color secondaryBackgroundColor = GetColor(0x472f3dff);
@@ -170,6 +200,19 @@ int main() {
       newBPressed = false;
     }
 
+    if (hasSelected) {
+      frequenzyChangeRec.x = metaSectionRec.x + MeasureText(std::format("Freq: every {} Day", plants.at(selectedIndex).getFreqStr()).c_str(), 30) + infoBarMargin * 2;
+    }
+
+    switch (frequenzyNum) {
+      case -1:
+        plants.at(selectedIndex).subToFreq();
+        break;
+      case 1:
+        plants.at(selectedIndex).addToFreq();
+        break;
+    }
+    
     BeginDrawing();
     ClearBackground(backgroudColor);
 
@@ -209,12 +252,12 @@ int main() {
 
       DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
       for (int i = 0; i < 5; i++) {
-        DrawRectangle(infoBarRec.x + infoBarMargin*(i + 1) + plantSize*i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
+        DrawRectangle(infoBarRec.x + infoBarMargin * (i + 1) + plantSize * i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
       }
-      DrawText("Freq:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
+      DrawText(std::format("Freq: every {} Day", plants.at(selectedIndex).getFreqStr()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
       frequenzyNum = PGUI::DrawUpDownButtons(frequenzyChangeRec, mousePos);
       DrawText("Wet:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 11 + fontHeight * 4 + plantSize, 30, WHITE);
-      
+
       DrawText("Meta", metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin, 38, GRAY);
       int xPos = std::round(plants.at(selectedIndex).getX() - selectionRec.width);
       int yPos = std::round(plants.at(selectedIndex).getY() - menuBarRec.height);

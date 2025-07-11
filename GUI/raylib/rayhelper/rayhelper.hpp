@@ -14,7 +14,7 @@ float fontSize = 30;
 namespace PGUI {
 
 float getMiddle(float beginnCord, float originWidth, float targetWidth) {
-  return beginnCord + (originWidth / 2) - targetWidth / 2;
+  return beginnCord + (originWidth / 2) - (targetWidth / 2);
 }
 
 Rectangle getMouseRec(Vector2 mousePos) {
@@ -29,20 +29,24 @@ int DrawUpDownButtons(Rectangle rec, Vector2 mousePos) {
   Rectangle mouseRec = getMouseRec(mousePos);
   Rectangle topRec = (Rectangle){rec.x, rec.y, rec.width, rec.height / 2};
   Rectangle botRec = (Rectangle){rec.x, rec.y + rec.height / 2, rec.width, rec.height / 2};
-  Vector2 textSizes = MeasureTextEx(GetFontDefault(), "+", fontSize, 1);
+  Vector2 textSizes;
 
+  textSizes = MeasureTextEx(GetFontDefault(), "+", fontSize, 1);
   DrawRectangleRec(topRec, backgroundColor);
-  DrawText("+", getMiddle(topRec.x, topRec.width, textSizes.x), getMiddle(topRec.y, topRec.height, textSizes.y), fontSize, textColor);
+  DrawText("+", getMiddle(topRec.x, topRec.width, textSizes.x), getMiddle(topRec.y, topRec.height, textSizes.y) + 1, fontSize, textColor);
   DrawRectangleLinesEx(topRec, lineThickness, linesColor);
 
+  textSizes = MeasureTextEx(GetFontDefault(), "-", fontSize, 1);
   DrawRectangleRec(botRec, backgroundColor);
-  DrawText("-", getMiddle(botRec.x, botRec.width, textSizes.x), getMiddle(botRec.y, botRec.height, textSizes.y), fontSize, textColor);
+  DrawText("-", getMiddle(botRec.x, botRec.width, textSizes.x), getMiddle(botRec.y, botRec.height, textSizes.y) + 1, fontSize, textColor);
   DrawRectangleLinesEx(botRec, lineThickness, linesColor);
 
-  if (CheckCollisionRecs(topRec, mouseRec)) {
-    pressed = 1;
-  } else if (CheckCollisionRecs(botRec, mouseRec)) {
-    pressed = -1;
+  if (IsMouseButtonPressed(0)) {
+    if (CheckCollisionRecs(topRec, mouseRec)) {
+      pressed = 1;
+    } else if (CheckCollisionRecs(botRec, mouseRec)) {
+      pressed = -1;
+    }
   }
   return pressed;
 }
