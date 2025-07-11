@@ -7,13 +7,15 @@
 
 using namespace PGUI;
 
+#define FPSC 144
+
 class plant {
   std::string title;
   Vector2 positionVec;
   int bewaesserungsFequenz; // 1.5 2
   int nennerFrequenz;       // for 1/2 or 1/8
   int textureID;
-  bool bewaessert;     //??
+  bool bewaessert; //??
 
 public:
   plant() {
@@ -32,7 +34,7 @@ public:
     this->positionVec = relPosition;
     this->textureID = textureID;
   }
-  
+
   void changeFrequenz(double frequenz) { this->bewaesserungsFequenz = frequenz; }
   void changeTexture(int textureID) { this->textureID = textureID; }
   void addPosition(Vector2 position) { this->positionVec = position; }
@@ -62,11 +64,14 @@ public:
     }
   }
 
-  bool& getBewaessertRef(){
+  bool &getBewaessertRef() {
     return bewaessert;
   }
-  int& getTextureIdRef(){
+  int &getTextureIdRef() {
     return textureID;
+  }
+  std::string& getTitleRef(){
+    return title;
   }
 
   float getX() {
@@ -75,7 +80,7 @@ public:
   float getY() {
     return this->positionVec.y;
   }
-  int getTextureId(){
+  int getTextureId() {
     return this->textureID;
   }
   Rectangle getRec(float plantSize) {
@@ -84,7 +89,7 @@ public:
   std::string getTitle() {
     return this->title;
   }
-  std::string getFreqStr(){
+  std::string getFreqStr() {
     std::string freqStr = "";
     (nennerFrequenz >= 2) ? freqStr = std::format("1/{}", nennerFrequenz) : freqStr = std::format("{}", bewaesserungsFequenz);
     return freqStr;
@@ -108,7 +113,7 @@ int main() {
   Vector2 windowSize = (Vector2){static_cast<float>(GetScreenWidth()), static_cast<float>(GetScreenHeight())};
   CloseWindow();
   InitWindow(windowSize.x, windowSize.y, "Bewaesserung");
-  SetTargetFPS(144);
+  SetTargetFPS(FPSC);
 
   float plantSize = windowSize.x / 50;
   float menuBarMargin = 14;
@@ -121,8 +126,11 @@ int main() {
   bool hasSelected = false;
   int selectedIndex;
   bool newBPressed = false;
+  bool isEditing = false;
   int frequenzyNum = 0;
-
+  int frameCounter = 0;
+  int bufferBeginn = 0;
+  
   Rectangle menuBarRec = (Rectangle){0, 0, windowSize.x, windowSize.y / 35};
 
   Image uploadImage = LoadImage("assets/file_up.png");
@@ -143,14 +151,20 @@ int main() {
 
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
+  
+  
   Rectangle selectionRec = (Rectangle){0, menuBarRec.height, windowSize.x / 6, windowSize.y - menuBarRec.height};
   Rectangle menuBarLinesRec = (Rectangle){downloadRec.x + downloadRec.width + menuBarMargin, uploadRec.y - 2, menuBarRec.width - (menuBarMargin * 4) - (uploadRec.width * 2), uploadRec.height + 4};
   Rectangle newBRec = (Rectangle){selectionRec.width / 16, selectionRec.height - selectionRec.height / 10.0f, (selectionRec.width / 8) * 7, selectionRec.height / 20};
+  
+  
   Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
   Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
   Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 8.5f + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
+  Rectangle plantTitleLabelRec = (Rectangle){infoBarRec.x + (infoBarMargin * 2) + MeasureText("title: ", 30), infoBarRec.y + infoBarMargin * 3 + fontHeight, infoBarRec.width - infoBarMargin *3 - static_cast<float>( MeasureText("title: ", 30)), fontHeight};
   Rectangle wetCheckBoxRec = (Rectangle){infoBarRec.x + infoBarMargin * 2 + MeasureText("Wet: ", 30), infoBarRec.y + infoBarMargin * 10 + fontHeight * 4 + plantSize, 50, 50};
   Rectangle iconsRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize * 5 + infoBarMargin * 4, plantSize};
+  
   
   Color backgroudColor = GetColor(0x2d1c2eff); // 0x as prefix to show its a hexadecimal
   Color secondaryBackgroundColor = GetColor(0x472f3dff);
@@ -158,12 +172,14 @@ int main() {
   Color mainDarkColor = GetColor(0x281628ff);
 
   Color newBColor;
+  Color plantColor;
+  Color textureTint;
 
   bool shouldClose = false;
   while (!shouldClose) {
     Vector2 mousePos = GetMousePosition();
     Rectangle mouseRec = (Rectangle){mousePos.x, mousePos.y, 1, 1};
-    if (IsMouseButtonPressed(0)) {
+    if (IsMouseButtonPressed(0) && !isEditing) {
       // buttons
       if (CheckCollisionRecs(uploadRec, mouseRec)) {
         // WIP
@@ -193,7 +209,7 @@ int main() {
         hasSelected = false;
       }
     }
-    if (IsMouseButtonDown(0)) {
+    if (IsMouseButtonDown(0) && !isEditing) {
       if (isHolding == true) {
         holdPlant.changePosition(GetMouseDelta()); // untested
       }
@@ -223,14 +239,14 @@ int main() {
     }
 
     switch (frequenzyNum) {
-      case -1:
-        plants.at(selectedIndex).subToFreq();
-        break;
-      case 1:
-        plants.at(selectedIndex).addToFreq();
-        break;
+    case -1:
+      plants.at(selectedIndex).subToFreq();
+      break;
+    case 1:
+      plants.at(selectedIndex).addToFreq();
+      break;
     }
-    
+
     BeginDrawing();
     ClearBackground(backgroudColor);
 
@@ -248,20 +264,18 @@ int main() {
     }
     DrawText("+", newBRec.x + newBRec.width / 2, newBRec.y + newBRec.height / 3, 20, WHITE);
 
-    // info bar
-    // WIP
-
-    Color plantColor;
     for (int i = 0; i < plants.size(); i++) {
       if (i != selectedIndex || hasSelected == false) {
         plantColor = PINK;
+        textureTint = WHITE;
       } else {
         plantColor = BLACK;
+        textureTint = GRAY;
       }
-      if(plants.at(i).getTextureId() <= -1 || plants.at(i).getTextureId() >= 5){
+      if (plants.at(i).getTextureId() <= -1 || plants.at(i).getTextureId() >= 5) {
         DrawRectangle(plants.at(i).getX(), plants.at(i).getY(), plantSize, plantSize, plantColor);
-      }else {
-        DrawTexture(plantTextures[plants.at(i).getTextureId()], plants.at(i).getX(), plants.at(i).getY(), WHITE);
+      } else {
+        DrawTexture(plantTextures[plants.at(i).getTextureId()], plants.at(i).getX(), plants.at(i).getY(), textureTint);
       }
     }
 
@@ -269,14 +283,12 @@ int main() {
       DrawRectangleRec(infoBarRec, secondaryBackgroundColor);
       DrawRectangleRounded(metaSectionRec, 0.06, 20, mainDarkColor);
       DrawText("Infos", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin, 38, GRAY);
-      DrawText(std::format("title: {}", plants.at(selectedIndex).getTitle()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
-
-      DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
-      //for (int i = 0; i < 5; i++) {
-      //  DrawRectangle(infoBarRec.x + infoBarMargin * (i + 1) + plantSize * i, infoBarRec.y + infoBarMargin * 7 + fontHeight * 3, plantSize, plantSize, WHITE);
-      //}
-      PGUI::DrawCheckButtonGroup_Textures(iconsRec, (Vector2){plantSize, plantSize}, 5, plantTextures, mousePos, infoBarMargin, plants.at(selectedIndex).getTextureIdRef());
+      DrawText("title:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
+      PGUI::DrawLabel(plantTitleLabelRec, plants.at(selectedIndex).getTitleRef(), 30, isEditing, mousePos, frameCounter, bufferBeginn);
       
+      DrawText("Icon:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 5 + fontHeight * 2, 30, WHITE);
+      PGUI::DrawCheckButtonGroup_Textures(iconsRec, (Vector2){plantSize, plantSize}, 5, plantTextures, mousePos, infoBarMargin, plants.at(selectedIndex).getTextureIdRef());
+
       DrawText(std::format("Freq: every {} Day", plants.at(selectedIndex).getFreqStr()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
       frequenzyNum = PGUI::DrawUpDownButtons(frequenzyChangeRec, mousePos);
       DrawText("Wet:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 11 + fontHeight * 4 + plantSize, 30, WHITE);
@@ -292,9 +304,17 @@ int main() {
       DrawText(std::format("Index  {}", selectedIndex).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 7 + fontHeight * 3, 30, WHITE);
     }
     if (isHolding) {
-      DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
+      if (holdPlant.getTextureId() != -1) {
+        DrawTexture(plantTextures[holdPlant.getTextureId()], holdPlant.getX(), holdPlant.getY(), WHITE);
+      } else {
+        DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
+      }
     }
 
+    if(frameCounter == 100*FPSC){
+      frameCounter = 0;
+    }else{frameCounter++;}
+    
     if (WindowShouldClose()) {
       shouldClose = true;
     }
