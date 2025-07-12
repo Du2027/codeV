@@ -1,6 +1,10 @@
-#include "../rayhelper/rayhelper.hpp"
+/*
+ * For loading a file put a file called save.txt in root dir.
+ * If no textures are shown, execute in root dir.
+ */
+
+#include "../helper/rayhelper.hpp"
 #include <cmath>
-#include <cstdio>
 #include <format>
 #include <fstream>
 #include <iostream>
@@ -17,10 +21,10 @@ using namespace PGUI;
 class plant {
   std::string title;
   Vector2 positionVec;
-  int bewaesserungsFequenz; // 1.5 2
+  int bewaesserungsFequenz; // every x days
   int nennerFrequenz;       // for 1/2 or 1/8
   int textureID;
-  bool bewaessert; //??
+  bool bewaessert;
 
 public:
   plant() {
@@ -79,12 +83,12 @@ public:
     return title;
   }
 
-  int getBewaesserungsFreq() { return this->bewaesserungsFequenz; }
-  int getNennerFreq() { return this->nennerFrequenz; }
+  Rectangle getRec(float plantSize) { return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize}; }
   float getX() { return this->positionVec.x; }
   float getY() { return this->positionVec.y; }
+  int getBewaesserungsFreq() { return this->bewaesserungsFequenz; }
+  int getNennerFreq() { return this->nennerFrequenz; }
   int getTextureId() { return this->textureID; }
-  Rectangle getRec(float plantSize) { return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize}; }
   std::string getTitle() { return this->title; }
   std::string getBewaessertString() { return std::to_string((bewaessert == true) ? 1 : 0); }
 
@@ -114,17 +118,18 @@ int main() {
   InitWindow(windowSize.x, windowSize.y, "Bewaesserung");
   SetTargetFPS(FPSC);
 
+  plant holdPlant;
+  std::vector<plant> plants; // Initialisieren???
   float plantSize = windowSize.x / 50;
   float menuBarMargin = 14;
   float infoBarMargin = 10;
   float fontHeight = MeasureTextEx(GetFontDefault(), "X", 30, 1).y;
-  bool isHolding = false;
-  plant holdPlant;
-  std::vector<plant> plants; // Initialisieren???
+  bool shouldClose = false;
   bool hasSelected = false;
-  int selectedIndex;
+  bool isHolding = false;
   bool newBPressed = false;
   bool isEditing = false;
+  int selectedIndex;
   int frequenzyNum = 0;
   int frameCounter = 0;
   int bufferBeginn = 0;
@@ -133,7 +138,7 @@ int main() {
 
   Image uploadImage = LoadImage("assets/file_up.png");
   Image downloadImage = LoadImage("assets/file_down.png");
-  Image temp_plantImages;
+  Image temp_plantImage;
 
   ImageResize(&uploadImage, menuBarRec.height - 17, menuBarRec.height - 20); // nur 5x2 Pixel auf 720p???
   ImageResize(&downloadImage, uploadImage.width, uploadImage.height);
@@ -142,14 +147,13 @@ int main() {
   Texture downloadTexture = LoadTextureFromImage(downloadImage);
   Texture plantTextures[5];
   for (int i = 0; i < 5; i++) {
-    temp_plantImages = LoadImage(std::format("assets/plant{}.png", i + 1).c_str());
-    ImageResize(&temp_plantImages, static_cast<int>(plantSize), static_cast<int>(plantSize));
-    plantTextures[i] = LoadTextureFromImage(temp_plantImages);
+    temp_plantImage = LoadImage(std::format("assets/plant{}.png", i + 1).c_str());
+    ImageResize(&temp_plantImage, static_cast<int>(plantSize), static_cast<int>(plantSize));
+    plantTextures[i] = LoadTextureFromImage(temp_plantImage);
   }
 
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
-
   Rectangle menuBarLinesRec = (Rectangle){downloadRec.x + downloadRec.width + menuBarMargin, uploadRec.y - 2, menuBarRec.width - (menuBarMargin * 4) - (uploadRec.width * 2), uploadRec.height + 4};
   Rectangle newBRec = (Rectangle){PGUI::getMiddle(0, windowSize.x, windowSize.x / 10), windowSize.y - (windowSize.y / 20) - 50, windowSize.x / 20, windowSize.y / 20};
 
@@ -169,12 +173,11 @@ int main() {
   Color plantColor;
   Color textureTint;
 
-  bool shouldClose = false;
   while (!shouldClose) {
     Vector2 mousePos = GetMousePosition();
     Rectangle mouseRec = (Rectangle){mousePos.x, mousePos.y, 1, 1};
     if (IsMouseButtonPressed(0) && !isEditing) {
-      // buttons
+      // loading
       if (CheckCollisionRecs(uploadRec, mouseRec) && FileExists("save.txt")) {
         plants.clear();
         std::ifstream inputFile("save.txt");
@@ -197,7 +200,9 @@ int main() {
           plantc++;
         }
         inputFile.close();
-      } else if (CheckCollisionRecs(downloadRec, mouseRec)) {
+      }
+      // saving
+      else if (CheckCollisionRecs(downloadRec, mouseRec)) {
         std::ofstream outputFile("save.txt");
         plant savePlant;
         if (outputFile.is_open()) {
@@ -216,7 +221,9 @@ int main() {
         } else {
           printf("ERR: FILEWRITE\n");
         }
-      } else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
+      }
+      // new
+      else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
         isHolding = true;
         holdPlant = plant();
         holdPlant.addPosition(mousePos);
@@ -242,7 +249,7 @@ int main() {
     }
     if (IsMouseButtonDown(0) && !isEditing) {
       if (isHolding == true) {
-        holdPlant.changePosition(GetMouseDelta()); // untested
+        holdPlant.changePosition(GetMouseDelta());
       }
     } else if (isHolding) {
       isHolding = false;
@@ -253,6 +260,7 @@ int main() {
       }
     }
 
+    // new Button backgroud color
     if (CheckCollisionRecs(newBRec, mouseRec)) {
       newBColor = mainDarkColor;
       if (IsMouseButtonDown(0)) {
@@ -287,13 +295,14 @@ int main() {
     DrawTexture(uploadTexture, uploadRec.x, uploadRec.y, WHITE);
     DrawTexture(downloadTexture, downloadRec.x, downloadRec.y, WHITE);
 
-    // selection bar
+    // new Button
     DrawRectangleRounded(newBRec, 0.6, 50, newBColor);
     if (newBPressed) {
       DrawRectangleRoundedLines(newBRec, 0.6, 50, mainColor);
     }
     DrawText("+", newBRec.x + (newBRec.width / 2) - (MeasureText("+", 30) / 2), newBRec.y + (newBRec.height / 2) - (MeasureTextEx(GetFontDefault(), "+", 30, 1).y / 2), 30, WHITE);
 
+    // plant drawing (vector)
     for (int i = 0; i < plants.size(); i++) {
       if (i != selectedIndex || hasSelected == false) {
         plantColor = PINK;
@@ -309,10 +318,21 @@ int main() {
       }
     }
 
+    // plant drawing (cursor)
+    if (isHolding) {
+      if (holdPlant.getTextureId() != -1) {
+        DrawTexture(plantTextures[holdPlant.getTextureId()], holdPlant.getX(), holdPlant.getY(), WHITE);
+      } else {
+        DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
+      }
+    }
+
+    // info bar
     if (hasSelected) {
       DrawRectangleRec(infoBarRec, secondaryBackgroundColor);
       DrawRectangleRounded(metaSectionRec, 0.06, 20, mainDarkColor);
       DrawText("Infos", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin, 38, GRAY);
+
       DrawText("title:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
       PGUI::DrawLabel(plantTitleLabelRec, plants.at(selectedIndex).getTitleRef(), 30, isEditing, mousePos, frameCounter, bufferBeginn);
 
@@ -321,6 +341,7 @@ int main() {
 
       DrawText(std::format("Freq: every {} Day", plants.at(selectedIndex).getFreqStr()).c_str(), infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 9 + fontHeight * 3 + plantSize, 30, WHITE);
       frequenzyNum = PGUI::DrawUpDownButtons(frequenzyChangeRec, mousePos);
+
       DrawText("Wet:", infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarMargin * 11 + fontHeight * 4 + plantSize, 30, WHITE);
       PGUI::DrawCheckBox(wetCheckBoxRec, plants.at(selectedIndex).getBewaessertRef(), mousePos);
 
@@ -333,15 +354,9 @@ int main() {
 
       DrawText(std::format("Index  {}", selectedIndex).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 7 + fontHeight * 3, 30, WHITE);
     }
-    if (isHolding) {
-      if (holdPlant.getTextureId() != -1) {
-        DrawTexture(plantTextures[holdPlant.getTextureId()], holdPlant.getX(), holdPlant.getY(), WHITE);
-      } else {
-        DrawRectangleRec(holdPlant.getRec(plantSize), PINK);
-      }
-    }
+    EndDrawing();
 
-    if (frameCounter == 100 * FPSC) {
+    if (frameCounter == 60 * FPSC) {
       frameCounter = 0;
     } else {
       frameCounter++;
@@ -350,7 +365,6 @@ int main() {
     if (WindowShouldClose()) {
       shouldClose = true;
     }
-    EndDrawing();
   }
   CloseWindow();
   return 0;

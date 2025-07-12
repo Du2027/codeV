@@ -10,7 +10,7 @@ $(BUILD_DIR):
 	@echo "creating build directory"
 	@mkdir -p $(BUILD_DIR)
 
-$(BUILD): src/main.cpp ../rayhelper/rayhelper.hpp | $(BUILD_DIR) 
+$(BUILD): src/main.cpp ../helper/rayhelper.hpp | $(BUILD_DIR) 
 	@echo "compiling & linking to final"
 	@${CC} ${CFLAGS} $^ -o $@
 
