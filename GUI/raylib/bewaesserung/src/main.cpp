@@ -150,11 +150,10 @@ int main() {
   Rectangle uploadRec = (Rectangle){menuBarMargin, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
   Rectangle downloadRec = (Rectangle){menuBarMargin * 2 + uploadRec.width, (menuBarRec.height - uploadImage.height) / 2, static_cast<float>(uploadImage.width), static_cast<float>(uploadImage.height)};
 
-  Rectangle selectionRec = (Rectangle){0, menuBarRec.height, windowSize.x / 6, windowSize.y - menuBarRec.height};
   Rectangle menuBarLinesRec = (Rectangle){downloadRec.x + downloadRec.width + menuBarMargin, uploadRec.y - 2, menuBarRec.width - (menuBarMargin * 4) - (uploadRec.width * 2), uploadRec.height + 4};
-  Rectangle newBRec = (Rectangle){selectionRec.width / 16, selectionRec.height - selectionRec.height / 10.0f, (selectionRec.width / 8) * 7, selectionRec.height / 20};
+  Rectangle newBRec = (Rectangle){PGUI::getMiddle(0, windowSize.x, windowSize.x / 10), windowSize.y - (windowSize.y / 20) - 50, windowSize.x / 20, windowSize.y / 20};
 
-  Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, selectionRec.y, selectionRec.width, selectionRec.height};
+  Rectangle infoBarRec = (Rectangle){(windowSize.x / 6) * 5, menuBarRec.height, windowSize.x / 6, windowSize.y - menuBarRec.height};
   Rectangle metaSectionRec = (Rectangle){infoBarRec.x + infoBarMargin, infoBarRec.y + infoBarRec.height / 2, infoBarRec.width - 2 * infoBarMargin, (infoBarRec.height / 2) - infoBarMargin};
   Rectangle frequenzyChangeRec = (Rectangle){infoBarRec.x + infoBarMargin + 100, infoBarRec.y + infoBarMargin * 8.5f + MeasureTextEx(GetFontDefault(), "X", 30, 1).y * 3 + plantSize, 50, 50};
   Rectangle plantTitleLabelRec = (Rectangle){infoBarRec.x + (infoBarMargin * 2) + MeasureText("title: ", 30), infoBarRec.y + infoBarMargin * 3 + fontHeight, infoBarRec.width - infoBarMargin * 3 - static_cast<float>(MeasureText("title: ", 30)), fontHeight};
@@ -247,7 +246,7 @@ int main() {
       }
     } else if (isHolding) {
       isHolding = false;
-      if (!CheckCollisionRecs(selectionRec, mouseRec)) {
+      if (!CheckCollisionRecs(newBRec, mouseRec)) {
         plants.push_back(holdPlant);
         hasSelected = true;
         selectedIndex = plants.size() - 1;
@@ -289,12 +288,11 @@ int main() {
     DrawTexture(downloadTexture, downloadRec.x, downloadRec.y, WHITE);
 
     // selection bar
-    DrawRectangleRec(selectionRec, secondaryBackgroundColor);
     DrawRectangleRounded(newBRec, 0.6, 50, newBColor);
     if (newBPressed) {
       DrawRectangleRoundedLines(newBRec, 0.6, 50, mainColor);
     }
-    DrawText("+", newBRec.x + newBRec.width / 2, newBRec.y + newBRec.height / 3, 20, WHITE);
+    DrawText("+", newBRec.x + (newBRec.width / 2) - (MeasureText("+", 30) / 2), newBRec.y + (newBRec.height / 2) - (MeasureTextEx(GetFontDefault(), "+", 30, 1).y / 2), 30, WHITE);
 
     for (int i = 0; i < plants.size(); i++) {
       if (i != selectedIndex || hasSelected == false) {
@@ -327,7 +325,7 @@ int main() {
       PGUI::DrawCheckBox(wetCheckBoxRec, plants.at(selectedIndex).getBewaessertRef(), mousePos);
 
       DrawText("Meta", metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin, 38, GRAY);
-      int xPos = std::round(plants.at(selectedIndex).getX() - selectionRec.width);
+      int xPos = std::round(plants.at(selectedIndex).getX());
       int yPos = std::round(plants.at(selectedIndex).getY() - menuBarRec.height);
       DrawText(std::format("Pos    {}:{}", xPos, yPos).c_str(), metaSectionRec.x + infoBarMargin, metaSectionRec.y + infoBarMargin * 3 + fontHeight, 30, WHITE);
 
