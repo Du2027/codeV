@@ -6,9 +6,9 @@
 #include <iostream>
 #include <ostream>
 #include <raylib.h>
+#include <sstream> // Required for std::istringstream
 #include <string>
 #include <vector>
-#include <sstream> // Required for std::istringstream
 
 using namespace PGUI;
 
@@ -79,21 +79,15 @@ public:
     return title;
   }
 
-  float getX() {
-    return this->positionVec.x;
-  }
-  float getY() {
-    return this->positionVec.y;
-  }
-  int getTextureId() {
-    return this->textureID;
-  }
-  Rectangle getRec(float plantSize) {
-    return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize};
-  }
-  std::string getTitle() {
-    return this->title;
-  }
+  int getBewaesserungsFreq() { return this->bewaesserungsFequenz; }
+  int getNennerFreq() { return this->nennerFrequenz; }
+  float getX() { return this->positionVec.x; }
+  float getY() { return this->positionVec.y; }
+  int getTextureId() { return this->textureID; }
+  Rectangle getRec(float plantSize) { return (Rectangle){positionVec.x, positionVec.y, plantSize, plantSize}; }
+  std::string getTitle() { return this->title; }
+  std::string getBewaessertString() { return std::to_string((bewaessert == true) ? 1 : 0); }
+
   std::string getFreqStr() {
     std::string freqStr = "";
     (nennerFrequenz >= 2) ? freqStr = std::format("1/{}", nennerFrequenz) : freqStr = std::format("{}", bewaesserungsFequenz);
@@ -124,7 +118,6 @@ int main() {
   float menuBarMargin = 14;
   float infoBarMargin = 10;
   float fontHeight = MeasureTextEx(GetFontDefault(), "X", 30, 1).y;
-  std::string filePath = "";
   bool isHolding = false;
   plant holdPlant;
   std::vector<plant> plants; // Initialisieren???
@@ -183,24 +176,47 @@ int main() {
     Rectangle mouseRec = (Rectangle){mousePos.x, mousePos.y, 1, 1};
     if (IsMouseButtonPressed(0) && !isEditing) {
       // buttons
-      if (CheckCollisionRecs(uploadRec, mouseRec)) {
+      if (CheckCollisionRecs(uploadRec, mouseRec) && FileExists("save.txt")) {
+        plants.clear();
         std::ifstream inputFile("save.txt");
         std::string line;
         int plantc = 0;
         while (getline(inputFile, line)) {
-          std::istringstream iss(line); // Create an input string stream
+          std::istringstream iss(line); // create an input string stream
           std::string attribute;
           std::vector<std::string> attributes;
 
-          while (std::getline(iss, attribute, ';')) { // Read until the delimiter
+          while (std::getline(iss, attribute, ';')) { // read until delimiter
             attributes.push_back(attribute);
           }
-          plants[plantc] = plant() 
-          //std::string title, int bewaesserungsFrequenz, int nennerFrequenz, bool bewaessert, Vector2 relPosition, int textureID
-            plantc++;
+          if (attributes.size() != 7) {
+            printf("ERR: No 7 Attributes on Line %d\n", plantc);
+            continue;
+          }
+          plants.push_back(plant(attributes[0], std::stoi(attributes[1]), std::stoi(attributes[2]), std::stoi(attributes[3]), (Vector2){std::stof(attributes[4]), std::stof(attributes[5])}, std::stoi(attributes[6])));
+          // string title, int bewaesserungsFrequenz, int nennerFrequenz, bool bewaessert, Vector2 relPosition, int textureID
+          plantc++;
         }
+        inputFile.close();
       } else if (CheckCollisionRecs(downloadRec, mouseRec)) {
-        // WIP
+        std::ofstream outputFile("save.txt");
+        plant savePlant;
+        if (outputFile.is_open()) {
+          for (int i = 0; i < plants.size(); i++) {
+            savePlant = plants.at(i);
+            outputFile << savePlant.getTitle() << ";";
+            outputFile << std::to_string(savePlant.getBewaesserungsFreq()) << ";";
+            outputFile << std::to_string(savePlant.getNennerFreq()) << ";";
+            outputFile << savePlant.getBewaessertString() << ";";
+            outputFile << std::to_string(savePlant.getX()) << ";";
+            outputFile << std::to_string(savePlant.getY()) << ";";
+            outputFile << std::to_string(savePlant.getTextureId());
+            outputFile << std::endl;
+          }
+          outputFile.close();
+        } else {
+          printf("ERR: FILEWRITE\n");
+        }
       } else if (CheckCollisionRecs(newBRec, mouseRec) && isHolding == false) {
         isHolding = true;
         holdPlant = plant();
