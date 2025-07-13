@@ -2,6 +2,7 @@
 #include "constants.h"
 #include <cmath>
 #include <cstdio>
+#include <format>
 #include <raylib.h>
 #include <string>
 
@@ -53,7 +54,7 @@ Screen GameScreen(Vector2 windowDeltaScales) {
   Image pump = LoadImage("assets/pump.png");
   ImageResize(&pump, (windowSize.x / 8), windowSize.y / 6);
   Texture pumpTexture = LoadTextureFromImage(pump);
-  
+
   PRect settingsB(500 * windowDeltaScales.x, 700 * windowDeltaScales.y, settings.width, settings.height);
   PRect bookmarkRec((windowSize.x / 8) * 6, -50 * windowDeltaScales.y, bookmark.width, bookmark.height);
 
@@ -64,12 +65,16 @@ Screen GameScreen(Vector2 windowDeltaScales) {
   int shopRelPos = shopRec.height + shopMargin;
   int shopAniStep = 0;
 
+  int upgradeCost = 2;
+  int waterAdd = 1;
+  PRect shopBRec(200 + shopRec.x, 170 + shopRec.y, 200, 50);
+
   Image storeBg = LoadImage("assets/store_background.png");
   ImageResize(&storeBg, shopRec.width, shopRec.height);
   Texture storeBgTexture = LoadTextureFromImage(storeBg);
 
   shopRec.y = shopStartPos;
-  
+
   while (!shouldClose) {
     windowDeltaScales.x = GetMonitorWidth(0) / 2560.0f;
     windowDeltaScales.y = GetMonitorHeight(0) / 1440.0f;
@@ -81,18 +86,33 @@ Screen GameScreen(Vector2 windowDeltaScales) {
         shouldClose = true;
         nextScreen = SETTINGSSCREEN;
       } else if (CheckCollisionRecs(mouseRec, bookmarkRec.getRect())) {
-        (inShop == true) ? inShop=false : inShop=true;
+        (inShop == true) ? inShop = false : inShop = true;
       } else if (!inShop) {
-        waterC++;
+        waterC += waterAdd;
+      } else if (inShop && CheckCollisionRecs(mouseRec, shopBRec.getRect())) {
+        if (waterC >= upgradeCost) {
+          waterAdd++;
+          waterC -= upgradeCost;
+          upgradeCost = upgradeCost * 2;
+        }
       }
     }
 
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawTexture(backgroundTexture, 0, 0 - background.height + windowSize.y, (Color){255, 255, 255, 200});
+
+    int backgroundHeightDiff = 0;
+    if (waterC > 400) {
+      backgroundHeightDiff = waterC - 400;
+    }
+    if (waterC > 1650) {
+      backgroundHeightDiff = 1250;
+    }
+    DrawTexture(backgroundTexture, 0, 0 - background.height + windowSize.y + backgroundHeightDiff, (Color){255, 255, 255, 200});
 
     // water texture & animation
-    int spritesY = ceil((waterC + 10) / waterTexturePx * 1.0);
+    int temp_water = (waterC < 400) ? waterC : 400;
+    int spritesY = ceil((temp_water + 10) / waterTexturePx * 1.0);
     for (int i = 0; i < spritesY; i++) {
       int spritesX = ceil(windowSize.x / waterTexturePx);
       waterTextureOffsetYSum = 0;
@@ -110,7 +130,7 @@ Screen GameScreen(Vector2 windowDeltaScales) {
           waterTextureOffsetTendenz = 'u';
         }
 
-        DrawTexture(waterTextures[waterTextureC], waterTexturePx * n /*-waterTextureOffsetX * i*/, (windowSize.y - waterC + waterTexturePx * i) - waterTextureOffsetYSum, WHITE);
+        DrawTexture(waterTextures[waterTextureC], waterTexturePx * n /*-waterTextureOffsetX * i*/, (windowSize.y - temp_water + waterTexturePx * i) - waterTextureOffsetYSum, WHITE);
       }
     }
 
@@ -128,7 +148,7 @@ Screen GameScreen(Vector2 windowDeltaScales) {
         }
         shopRec.y = shopStartPos + shopMargin + (shopRelPos / 8.0) * shopAniStep;
       }
-      
+
     } else if (shopAniStep > 0) {
       if (shopFrameC <= fpsc / 160) {
         shopFrameC++;
@@ -138,11 +158,15 @@ Screen GameScreen(Vector2 windowDeltaScales) {
       }
       shopRec.y = shopStartPos + shopMargin + (shopRelPos / 8.0) * shopAniStep;
     }
-    
-    //DrawTexture(storeBgTexture, shopRec.x, shopRec.y, WHITE); 
-    DrawRectangleRounded(shopRec.getRect(), 0.1, 50, (Color) {130, 130, 130, 200});
+
+    // DrawTexture(storeBgTexture, shopRec.x, shopRec.y, WHITE);
+    DrawRectangleRounded(shopRec.getRect(), 0.1, 50, (Color){130, 130, 130, 230});
     DrawTexture(pumpTexture, 100 + shopRec.x, 150 + shopRec.y, WHITE);
-    
+    if (inShop) {
+      DrawRectangleRounded(shopBRec.getRect(), 0.2, 50, WHITE);
+      DrawText(std::format("Upgrade ({})", upgradeCost).c_str(), shopBRec.x + 10, shopBRec.y + 10, 30, BLACK);
+    }
+
     DrawTexture(bookmarkTexture, bookmarkRec.x, bookmarkRec.y, WHITE);
     DrawTexture(storeTexture, (windowSize.x / 8) * 6 + 6 * windowDeltaScales.x, 150 * windowDeltaScales.y, WHITE);
 
